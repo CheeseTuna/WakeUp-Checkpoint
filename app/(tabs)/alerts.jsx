@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-const Alarm = () => {
+const Alerts = () => {
   return (
     <View>
-      <Text>Alarm</Text>
+      <Text>Alerts</Text>
     </View>
   )
 }
 
-export default Alarm
+export default Alerts

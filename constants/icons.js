@@ -1,3 +1,4 @@
+import alarm from "../assets/icons/alarm.png";
 import bookmark from "../assets/icons/bookmark.png";
 import home from "../assets/icons/home.png";
 import plus from "../assets/icons/plus.png";
@@ -11,6 +12,10 @@ import logout from "../assets/icons/logout.png";
 import eyeHide from "../assets/icons/eye-hide.png";
 import eye from "../assets/icons/eye.png";
 import play from "../assets/icons/play.png";
+import profile_new from "../assets/icons/profile_new.png";
+import house from "../assets/icons/house.png";
+import friends from "../assets/icons/friends.png";
+import bell from "../assets/icons/bell.png";
 
 export default {
   play,
@@ -26,4 +31,9 @@ export default {
   logout,
   eyeHide,
   eye,
+  alarm,
+  bell,
+  friends,
+  profile_new,
+  house,
 };
