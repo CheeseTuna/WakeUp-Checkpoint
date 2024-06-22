@@ -9,7 +9,7 @@ const AuthLayout = () => {
         <Stack.Screen 
           name="log-in"
           options={{
-            headerShwon: false
+            headerShown: false
           }}
         />
         <Stack.Screen 
