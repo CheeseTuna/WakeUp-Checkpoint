@@ -9,18 +9,20 @@ export default function App() {
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView contentContainerStyle={{ height: '100%'}}>
-        <View className="w-full justify-center items-center h-full px-4">
-
+        <View >
           <Image
             source={images.header}
-            className="max-w-[100px] w-full h-[100px]"
+            className="w-[136px] h-[100px] absolute -bottom-20 left-4"
             resizeMode="contain"
           />
+        </View>
+        
+        <View className="w-full justify-center items-center h-full px-4">
 
-          <Text className="text-center text-lg font-bold p-4 text-white">
+          <Text className="text-center text-xl font-bold p-4 text-white">
             Race to silence alarms
           </Text>
-          <Text className="text-center text-lg font-bold p-4 text-white">
+          <Text className="text-center text-xl font-bold p-4 text-white">
             Survive hilarious wake-up calls from friends!
           </Text>
           
