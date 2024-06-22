@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, Image, StatusBar } from 'react-native'
+import { View, Text, ScrollView, Image } from 'react-native'
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
 import { images } from '../../constants';
 import FormField from '../../components/FormField';
 import CustomButton from '../../components/CustomButton';
@@ -17,10 +18,8 @@ const LogIn = () => {
   const submit = () => {
 
   }
-
   return (
     <SafeAreaView className="bg-primary h-full">
-      <StatusBar backgroundColor="primary" barStyle="light-content" />
       <ScrollView>
         <View className="w-full justify-center h-full px-4 my-6">
           <Image source={images.header}
@@ -35,6 +34,7 @@ const LogIn = () => {
             email: e })}
             otherStyles="mt-7"
             keyboardType="email-address"
+
           />
           <FormField 
             title="Password"
@@ -55,6 +55,7 @@ const LogIn = () => {
               Don't have an account?
             </Text>
             <Link href="register" className="text-lg font-psemibold text-secondary">Register</Link>
+
           </View>
         </View>
       </ScrollView>
