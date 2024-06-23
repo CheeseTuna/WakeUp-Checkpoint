@@ -15,7 +15,7 @@ const AuthLayout = () => {
         <Stack.Screen 
           name="register"
           options={{
-            headerShwon: false
+            headerShown: false
           }}
         />
 
