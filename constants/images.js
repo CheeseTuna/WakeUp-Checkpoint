@@ -7,6 +7,6 @@ import logoSmall from "../assets/images/logo-small.png";
 import empty from "../assets/images/empty.png";
 import landingscreen from "../assets/images/landingscreen.png";
 import header from "../assets/images/header.png";
+import woman from "../assets/images/woman.png";
 
-
-export default { profile, thumbnail, cards, path, logo, logoSmall, empty, landingscreen, header };
+export default { profile, thumbnail, cards, path, logo, logoSmall, empty, landingscreen, header, woman };

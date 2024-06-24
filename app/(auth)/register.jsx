@@ -28,7 +28,7 @@ const Register = () => {
       const result = await createUser(form.email, form.password, form.username)
 
       // set it to global state..
-      router.replace('/alarm')
+      router.replace('/')
     } catch (error) {
       Alert.alert('Error', error.message)
     } finally {

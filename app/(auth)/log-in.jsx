@@ -28,7 +28,7 @@ const LogIn = () => {
       await logIn(form.email, form.password)
 
       // set it to global state..
-      router.replace('/alarm')
+      router.replace('/profile')
     } catch (error) {
       Alert.alert('Error', error.message)
     } finally {
