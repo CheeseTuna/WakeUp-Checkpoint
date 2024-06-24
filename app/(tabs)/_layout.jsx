@@ -41,15 +41,15 @@ const TabsLayout = () => {
       
       >
         <Tabs.Screen
-          name="home"
+          name="alarm"
           options={{
-            title: 'Home',
+            title: 'Alarm',
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <TabIcon 
-                icon={icons.house}
+                icon={icons.alarm}
                 color={color}
-                name="Home"
+                name="Alarm"
                 focused={focused}
               />
             )
@@ -70,21 +70,7 @@ const TabsLayout = () => {
             )
           }}
           />
-          <Tabs.Screen
-          name="alarm"
-          options={{
-            title: 'Alarm',
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon 
-                icon={icons.alarm}
-                color={color}
-                name="Alarm"
-                focused={focused}
-              />
-            )
-          }}
-          />
+  
           <Tabs.Screen
           name="profile"
           options={{
