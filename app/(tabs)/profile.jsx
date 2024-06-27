@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground } from
 import { FontAwesome } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import { useGlobalContext } from '../../context/GlobalProvider';
-import { getUserData } from '../../lib/appwrite';
+import { getCurrentUser, getUserData } from '../../lib/appwrite';
 import images from '../../constants/images';
 import { useRouter } from 'expo-router';
 
@@ -20,8 +20,8 @@ const Profile = () => {
       } else {
         const fetchUserData = async () => {
           try {
-            const userData = await getUserData();
-            setUsername(userData.name);
+            const userData = await getCurrentUser();
+            setUsername(userData.username);
           } catch (error) {
             console.error(error);
           }
