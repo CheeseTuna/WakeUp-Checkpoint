@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Image, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { images } from '../../constants/images'; // corrected path
+import images from '../../constants/images'; // corrected path
 import FormField from '../../components/FormField'; // corrected import
 import CustomButton from '../../components/CustomButton'; // corrected import
 import { Link, router } from 'expo-router';
@@ -28,7 +28,7 @@ const Register = () => {
     try {
       const result = await createUser(form.email, form.password, form.username);
       // set it to global state..
-      router.replace('/');
+      router.replace('/profile');
     } catch (error) {
       Alert.alert('Error', error.message);
     } finally {
