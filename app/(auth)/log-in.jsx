@@ -3,8 +3,9 @@ import { Link, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
 
-import { images } from "../../constants";
-import { CustomButton, FormField } from "../../components";
+import { images } from "../../constants/images"; // corrected path
+import CustomButton from "../../components/CustomButton"; // corrected import
+import FormField from "../../components/FormField"; // corrected import
 import { getCurrentUser, logIn } from "../../lib/appwrite";
 import { useGlobalContext } from "../../context/GlobalProvider";
 
@@ -24,7 +25,7 @@ const LogIn = () => {
     setSubmitting(true);
 
     try {
-      await signIn(form.email, form.password);
+      await logIn(form.email, form.password);
       const result = await getCurrentUser();
       setUser(result);
       setIsLogged(true);
