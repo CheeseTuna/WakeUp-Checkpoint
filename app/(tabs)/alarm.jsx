@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Modal, TouchableOpacity, Switch, Button } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Picker } from '@react-native-picker/picker';
@@ -20,8 +20,55 @@ const Alarm = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedSound, setSelectedSound] = useState('');
   const [activeDays, setActiveDays] = useState([]);
+  const [sound, setSound] = useState();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentSound, setCurrentSound] = useState('');
 
   const daysOfWeek = ['M', 'T', 'W', 'Th', 'Fr', 'S', 'Su'];
+
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+  const playSound = async (soundName) => {
+    if (isPlaying && currentSound === soundName) {
+      await sound.stopAsync();
+      setIsPlaying(false);
+      return;
+    }
+
+    let soundFile;
+    switch (soundName) {
+      // case 'beep':
+      //   soundFile = require('../../assets/sounds/beep.mp3');
+      //   break;
+      // case 'chime':
+      //   soundFile = require('../../assets/sounds/chime.mp3');
+      //   break;
+      // case 'alarm':
+      //   soundFile = require('../../assets/sounds/alarm.mp3');
+      //   break;
+      case 'emergency':
+        soundFile = require('../../assets/sounds/emergency.wav');
+        break;
+      default:
+        return;
+    }
+
+    if (sound) {
+      await sound.unloadAsync();
+    }
+
+    const { sound: newSound } = await Audio.Sound.createAsync(soundFile);
+    setSound(newSound);
+    setCurrentSound(soundName);
+    setIsPlaying(true);
+    await newSound.playAsync();
+  };
 
   const addOrEditAlarm = () => {
     const newAlarm = { time, sound: selectedSound, active: true, days: activeDays };
@@ -107,7 +154,7 @@ const Alarm = () => {
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
                 <Text style={{ color: 'white' }}>Alarm sound</Text>
-                <Button title="Play" onPress={() => Audio(item.sound)} />
+                <Button title={isPlaying && currentSound === item.sound ? "Stop" : "Play"} onPress={() => playSound(item.sound)} />
               </View>
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -187,7 +234,7 @@ const Alarm = () => {
                   </TouchableOpacity>
                 ))}
               </View>
-              <Button title={isEditing ? 'Save Alarm' : 'Set Alarm'} onPress={addOrEditAlarm} />
+              <Button title={isPlaying && currentSound === selectedSound ? "Stop" : "Play"} onPress={() => playSound(selectedSound)} />
               <Button title="Cancel" onPress={resetModal} />
             </View>
           </View>
