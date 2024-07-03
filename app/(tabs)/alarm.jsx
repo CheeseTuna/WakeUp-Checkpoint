@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, Modal, TouchableOpacity, Switch, Button } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Picker } from '@react-native-picker/picker';
+import { Audio } from 'expo-av';
 import moment from 'moment';
 
 const Alarm = () => {
@@ -64,8 +65,10 @@ const Alarm = () => {
     setAlarms(alarms.map((alarm, i) => (i === index ? { ...alarm, active: !alarm.active } : alarm)));
   };
 
-  const toggleDay = (day) => {
-    setActiveDays(activeDays.includes(day) ? activeDays.filter(d => d !== day) : [...activeDays, day]);
+  const toggleDay = (day, index) => {
+    setAlarms(alarms.map((alarm, i) => 
+      i === index ? { ...alarm, days: alarm.days.includes(day) ? alarm.days.filter(d => d !== day) : [...alarm.days, day] } : alarm
+    ));
   };
 
   const activeAlarmsCount = alarms.filter(alarm => alarm.active).length;
@@ -85,17 +88,26 @@ const Alarm = () => {
             <TouchableOpacity onPress={() => editAlarm(index)}>
               <Text style={{ fontSize: 36, color: 'white' }}>{moment(item.time).format('HH:mm')}</Text>
               <Text style={{ color: 'gray' }}>Every day</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                 {daysOfWeek.map((day, i) => (
-                  <Text key={i} style={{
-                    color: item.days.includes(day) ? 'orange' : 'gray',
-                    marginHorizontal: 5
-                  }}>{day}</Text>
+                  <TouchableOpacity key={i} onPress={() => toggleDay(day, index)}>
+                    <View style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: 15,
+                      backgroundColor: item.days.includes(day) ? 'orange' : 'gray',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginHorizontal: 5
+                    }}>
+                      <Text style={{ color: 'white' }}>{day}</Text>
+                    </View>
+                  </TouchableOpacity>
                 ))}
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
                 <Text style={{ color: 'white' }}>Alarm sound</Text>
-                <Button title="Play" onPress={() => playSound(item.sound)} />
+                <Button title="Play" onPress={() => Audio(item.sound)} />
               </View>
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -110,7 +122,21 @@ const Alarm = () => {
         )}
         keyExtractor={(item, index) => index.toString()}
       />
-      <Button title="Add Alarm" onPress={() => setModalVisible(true)} />
+      <TouchableOpacity
+        style={{
+          backgroundColor: 'green',
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          justifyContent: 'center',
+          alignItems: 'center',
+          alignSelf: 'center',
+          marginTop: 20
+        }}
+        onPress={() => setModalVisible(true)}
+      >
+        <Text style={{ fontSize: 24, color: 'white' }}>+</Text>
+      </TouchableOpacity>
 
       {modalVisible && (
         <Modal
@@ -142,15 +168,22 @@ const Alarm = () => {
                 <Picker.Item label="Beep" value="beep" />
                 <Picker.Item label="Chime" value="chime" />
                 <Picker.Item label="Alarm" value="alarm" />
+                <Picker.Item label="Emergency" value="emergency" />
               </Picker>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
                 {daysOfWeek.map((day, i) => (
                   <TouchableOpacity key={i} onPress={() => toggleDay(day)}>
-                    <Text style={{
-                      color: activeDays.includes(day) ? 'orange' : 'gray',
-                      fontSize: 18,
+                    <View style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: 15,
+                      backgroundColor: activeDays.includes(day) ? 'orange' : 'gray',
+                      justifyContent: 'center',
+                      alignItems: 'center',
                       marginHorizontal: 5
-                    }}>{day}</Text>
+                    }}>
+                      <Text style={{ color: 'white' }}>{day}</Text>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>
