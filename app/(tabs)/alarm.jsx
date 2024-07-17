@@ -24,7 +24,7 @@ const Alarm = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSound, setCurrentSound] = useState('');
 
-  const daysOfWeek = ['M', 'T', 'W', 'Th', 'Fr', 'S', 'Su'];
+  const daysOfWeek = ['M', 'T', 'W', 'T ', 'Fr', 'S', 'Su'];
 
   useEffect(() => {
     return sound
