@@ -1,10 +1,11 @@
+// app/(tabs)/alarm.jsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Modal, TouchableOpacity, Switch, Button } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Picker } from '@react-native-picker/picker';
 import { Audio } from 'expo-av';
 import moment from 'moment';
-import BackgroundTimer from 'react-native-background-timer';
+import * as Notifications from 'expo-notifications';
 
 const Alarm = () => {
   const initialAlarms = [
@@ -73,13 +74,20 @@ const Alarm = () => {
     resetModal();
   };
 
-  const scheduleAlarm = (alarm) => {
+  const scheduleAlarm = async (alarm) => {
     const now = new Date();
-    const timeToAlarm = new Date(alarm.time) - now;
-    if (timeToAlarm > 0) {
-      BackgroundTimer.setTimeout(() => {
-        playSound(alarm.sound);
-      }, timeToAlarm);
+    const trigger = new Date(alarm.time);
+    if (trigger > now) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Alarm!',
+          body: 'Your alarm is going off!',
+          sound: true,
+        },
+        trigger: {
+          date: trigger,
+        },
+      });
     }
   };
 

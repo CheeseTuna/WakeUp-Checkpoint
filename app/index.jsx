@@ -1,26 +1,47 @@
+// app/index.jsx
+import React, { useEffect } from 'react';
+import { SafeAreaView, ScrollView, View, Image, Text, LogBox } from 'react-native';
+import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, Text, View, Image } from 'react-native';
-import { Redirect, router} from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { images } from '../constants';
+import { registerBackgroundTask } from './backgroundTasks';
+import ScheduleAlarm from './ScheduleAlarm';
+import * as Notifications from 'expo-notifications';
 import CustomButton from '../components/CustomButton';
 import { useGlobalContext } from '../context/GlobalProvider';
-import { LogBox } from 'react-native';
+import { images } from '../constants';
 
 LogBox.ignoreLogs(['Support for defaultProps will be removed from memo components in a future major release.']);
 
+const configureNotifications = async () => {
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') {
+    alert('You need to enable notifications for the alarm to work.');
+    return;
+  }
 
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+};
 
 export default function App() {
-  const {isLoading, isLoggedIn} = useGlobalContext();
+  const { isLoading, isLoggedIn } = useGlobalContext();
 
-  if(!isLoading && isLoggedIn) return <Redirect href="/profile" />
+  useEffect(() => {
+    configureNotifications();
+    registerBackgroundTask();
+  }, []);
+
+  if (!isLoading && isLoggedIn) return <Redirect href="/profile" />;
 
   return (
-    
     <SafeAreaView className="bg-primary h-full">
-      <ScrollView contentContainerStyle={{ height: '100%'}}>
-      <View className="w-full flex justify-center items-center min-h[85vh] px-4">
+      <ScrollView contentContainerStyle={{ height: '100%' }}>
+        <View className="w-full flex justify-center items-center min-h[85vh] px-4">
           <Image
             source={images.header}
             className="w-[130px] h-[84px]"
@@ -51,17 +72,15 @@ export default function App() {
             Survive hilarious wake-up calls from friends!
           </Text>
 
-          <CustomButton 
+          <CustomButton
             title="Continue with Email"
             handlePress={() => router.push('log-in')}
             containerStyles="w-full mt-7"
           />
-          
-          
         </View>
-        
+        <ScheduleAlarm />
       </ScrollView>
-      <StatusBar backgroundColor='#161622' style='light'/>
+      <StatusBar backgroundColor="#161622" style="light" />
     </SafeAreaView>
   );
 }
