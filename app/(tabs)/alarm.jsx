@@ -4,6 +4,8 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Picker } from '@react-native-picker/picker';
 import { Audio } from 'expo-av';
 import moment from 'moment';
+import BackgroundTimer from 'react-native-background-timer';
+
 
 const Alarm = () => {
   const initialAlarms = [
@@ -43,15 +45,6 @@ const Alarm = () => {
 
     let soundFile;
     switch (soundName) {
-      // case 'beep':
-      //   soundFile = require('../../assets/sounds/beep.mp3');
-      //   break;
-      // case 'chime':
-      //   soundFile = require('../../assets/sounds/chime.mp3');
-      //   break;
-      // case 'alarm':
-      //   soundFile = require('../../assets/sounds/alarm.mp3');
-      //   break;
       case 'emergency':
         soundFile = require('../../assets/sounds/emergency.wav');
         break;
@@ -110,6 +103,10 @@ const Alarm = () => {
 
   const toggleAlarm = (index) => {
     setAlarms(alarms.map((alarm, i) => (i === index ? { ...alarm, active: !alarm.active } : alarm)));
+  };
+
+  const toggleModalDay = (day) => {
+    setActiveDays(activeDays.includes(day) ? activeDays.filter(d => d !== day) : [...activeDays, day]);
   };
 
   const toggleDay = (day, index) => {
@@ -219,7 +216,7 @@ const Alarm = () => {
               </Picker>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
                 {daysOfWeek.map((day, i) => (
-                  <TouchableOpacity key={i} onPress={() => toggleDay(day)}>
+                  <TouchableOpacity key={i} onPress={() => toggleModalDay(day)}>
                     <View style={{
                       width: 30,
                       height: 30,
@@ -234,8 +231,11 @@ const Alarm = () => {
                   </TouchableOpacity>
                 ))}
               </View>
-              <Button title={isPlaying && currentSound === selectedSound ? "Stop" : "Play"} onPress={() => playSound(selectedSound)} />
-              <Button title="Cancel" onPress={resetModal} />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10 }}>
+                <Button title={isPlaying && currentSound === selectedSound ? "Stop" : "Play"} onPress={() => playSound(selectedSound)} />
+                <Button title="Cancel" onPress={resetModal} />
+                <Button title={isEditing ? "Save" : "Add"} onPress={addOrEditAlarm} />
+              </View>
             </View>
           </View>
         </Modal>
