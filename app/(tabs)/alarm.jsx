@@ -5,13 +5,15 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Picker } from '@react-native-picker/picker';
 import { Audio } from 'expo-av';
 import moment from 'moment';
-import * as Notifications from 'expo-notifications';
+import * as BackgroundFetch from 'expo-background-fetch';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { registerBackgroundTask } from '../backgroundTasks';
 
 const Alarm = () => {
   const initialAlarms = [
-    { time: new Date().setHours(8, 0, 0, 0), sound: '', active: false, days: [] },
-    { time: new Date().setHours(9, 0, 0, 0), sound: '', active: false, days: [] },
-    { time: new Date().setHours(10, 0, 0, 0), sound: '', active: false, days: [] }
+    { time: new Date().setHours(8, 0, 0, 0), sound: 'emergency', active: false, days: [] },
+    { time: new Date().setHours(9, 0, 0, 0), sound: 'emergency', active: false, days: [] },
+    { time: new Date().setHours(10, 0, 0, 0), sound: 'emergency', active: false, days: [] }
   ];
 
   const [alarms, setAlarms] = useState(initialAlarms);
@@ -20,7 +22,7 @@ const Alarm = () => {
   const [currentAlarm, setCurrentAlarm] = useState(null);
   const [time, setTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedSound, setSelectedSound] = useState('');
+  const [selectedSound, setSelectedSound] = useState('emergency');
   const [activeDays, setActiveDays] = useState([]);
   const [sound, setSound] = useState();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -48,6 +50,15 @@ const Alarm = () => {
       case 'emergency':
         soundFile = require('../../assets/sounds/emergency.wav');
         break;
+      // case 'beep':
+      //   soundFile = require('../../assets/sounds/beep.wav');
+      //   break;
+      // case 'chime':
+      //   soundFile = require('../../assets/sounds/chime.wav');
+      //   break;
+      // case 'alarm':
+      //   soundFile = require('../../assets/sounds/alarm.wav');
+      //   break;
       default:
         return;
     }
@@ -63,13 +74,14 @@ const Alarm = () => {
     await newSound.playAsync();
   };
 
-  const addOrEditAlarm = () => {
+  const addOrEditAlarm = async () => {
     const newAlarm = { time, sound: selectedSound, active: true, days: activeDays };
     if (isEditing) {
       setAlarms(alarms.map((alarm, index) => (index === currentAlarm ? newAlarm : alarm)));
     } else {
       setAlarms([...alarms, newAlarm]);
     }
+    await AsyncStorage.setItem('alarmSound', selectedSound);
     scheduleAlarm(newAlarm);
     resetModal();
   };
@@ -78,16 +90,12 @@ const Alarm = () => {
     const now = new Date();
     const trigger = new Date(alarm.time);
     if (trigger > now) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Alarm!',
-          body: 'Your alarm is going off!',
-          sound: true,
-        },
-        trigger: {
-          date: trigger,
-        },
-      });
+      const delay = trigger.getTime() - now.getTime();
+      console.log('Scheduling alarm to trigger in:', delay, 'milliseconds');
+      setTimeout(() => {
+        console.log('Triggering alarm immediately for testing');
+        registerBackgroundTask();
+      }, delay);
     }
   };
 
@@ -96,7 +104,7 @@ const Alarm = () => {
     setIsEditing(false);
     setCurrentAlarm(null);
     setTime(new Date());
-    setSelectedSound('');
+    setSelectedSound('emergency');
     setActiveDays([]);
   };
 
@@ -226,11 +234,10 @@ const Alarm = () => {
                 style={{ height: 50, width: 250 }}
                 onValueChange={(itemValue) => setSelectedSound(itemValue)}
               >
-                <Picker.Item label="Select Sound" value="" />
-                <Picker.Item label="Beep" value="beep" />
-                <Picker.Item label="Chime" value="chime" />
-                <Picker.Item label="Alarm" value="alarm" />
                 <Picker.Item label="Emergency" value="emergency" />
+                {/* <Picker.Item label="Beep" value="beep" />
+                <Picker.Item label="Chime" value="chime" />
+                <Picker.Item label="Alarm" value="alarm" /> */}
               </Picker>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
                 {daysOfWeek.map((day, i) => (
