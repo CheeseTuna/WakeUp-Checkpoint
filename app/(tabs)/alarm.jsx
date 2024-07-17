@@ -6,7 +6,6 @@ import { Audio } from 'expo-av';
 import moment from 'moment';
 import BackgroundTimer from 'react-native-background-timer';
 
-
 const Alarm = () => {
   const initialAlarms = [
     { time: new Date().setHours(8, 0, 0, 0), sound: '', active: false, days: [] },
@@ -70,7 +69,18 @@ const Alarm = () => {
     } else {
       setAlarms([...alarms, newAlarm]);
     }
+    scheduleAlarm(newAlarm);
     resetModal();
+  };
+
+  const scheduleAlarm = (alarm) => {
+    const now = new Date();
+    const timeToAlarm = new Date(alarm.time) - now;
+    if (timeToAlarm > 0) {
+      BackgroundTimer.setTimeout(() => {
+        playSound(alarm.sound);
+      }, timeToAlarm);
+    }
   };
 
   const resetModal = () => {
@@ -110,7 +120,7 @@ const Alarm = () => {
   };
 
   const toggleDay = (day, index) => {
-    setAlarms(alarms.map((alarm, i) => 
+    setAlarms(alarms.map((alarm, i) =>
       i === index ? { ...alarm, days: alarm.days.includes(day) ? alarm.days.filter(d => d !== day) : [...alarm.days, day] } : alarm
     ));
   };
