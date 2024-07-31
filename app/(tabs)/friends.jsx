@@ -67,7 +67,7 @@ const Friends = () => {
                 <Text style={styles.wakeUpTime}>Wake-up Time: 6:30 AM</Text>
               </View>
               <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'green' }]}>
-                <Text style={styles.statusText}>Awake</Text>
+                <Text style={styles.statusText}> Awake </Text>
               </TouchableOpacity>
             </View>
             <View style={styles.track}>
@@ -77,7 +77,7 @@ const Friends = () => {
                 <Text style={styles.wakeUpTime}>Wake-up Time: 7:05 AM</Text>
               </View>
               <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'gray' }]}>
-                <Text style={styles.statusText}>Sleeping</Text>
+                <Text style={styles.statusText}> Sleeping </Text>
               </TouchableOpacity>
             </View>
             <View style={styles.track}>
@@ -87,7 +87,7 @@ const Friends = () => {
                 <Text style={styles.wakeUpTime}>Wake-up Time: 8:00 AM</Text>
               </View>
               <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'red' }]}>
-                <Text style={styles.statusText}>Wake Up!</Text>
+                <Text style={styles.statusText}> Wake Up! </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -137,8 +137,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   addFriendIcon: {
-    width: 32,
-    height: 32,
+    width: 21,
+    height: 17,
+    marginTop: 4,
   },
   content: {
     flex: 1,
@@ -197,12 +198,20 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusButton: {
-    padding: 5,
-    borderRadius: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    minWidth: 120, // Ensures the button is wide enough to accommodate the text
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 5,
   },
   statusText: {
     color: 'white',
     fontSize: 16,
+    textAlign: 'center',
+    numberOfLines: 1, // Ensures the text is confined to a single line
+    adjustsFontSizeToFit: true, // Adjusts the font size to fit within the button
   },
   modalContainer: {
     flex: 1,

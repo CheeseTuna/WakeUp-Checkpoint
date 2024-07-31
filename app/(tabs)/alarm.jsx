@@ -198,7 +198,7 @@ const Alarm = () => {
       />
       <TouchableOpacity
         style={{
-          backgroundColor: 'green',
+          backgroundColor: 'orange',
           width: 60,
           height: 60,
           borderRadius: 30,
