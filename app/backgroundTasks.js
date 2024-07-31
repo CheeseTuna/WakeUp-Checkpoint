@@ -10,9 +10,7 @@ TaskManager.defineTask('ALARM_TASK', async () => {
   try {
     const soundFiles = {
       emergency: require('../assets/sounds/emergency.wav'),
-      beep: require('../assets/sounds/beep.wav'),
-      chime: require('../assets/sounds/chime.wav'),
-      alarm: require('../assets/sounds/alarm.wav'),
+      // Add other sound files as necessary
     };
 
     // Retrieve the alarm sound from storage

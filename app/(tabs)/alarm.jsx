@@ -28,7 +28,7 @@ const Alarm = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSound, setCurrentSound] = useState('');
 
-  const daysOfWeek = ['M', 'T', 'W', 'T ', 'Fr', 'S', 'Su'];
+  const daysOfWeek = ['M', 'Tu', 'W', 'Th', 'F', 'S', 'Su'];
 
   useEffect(() => {
     return sound
@@ -50,15 +50,6 @@ const Alarm = () => {
       case 'emergency':
         soundFile = require('../../assets/sounds/emergency.wav');
         break;
-      // case 'beep':
-      //   soundFile = require('../../assets/sounds/beep.wav');
-      //   break;
-      // case 'chime':
-      //   soundFile = require('../../assets/sounds/chime.wav');
-      //   break;
-      // case 'alarm':
-      //   soundFile = require('../../assets/sounds/alarm.wav');
-      //   break;
       default:
         return;
     }
@@ -143,6 +134,20 @@ const Alarm = () => {
 
   const activeAlarmsCount = alarms.filter(alarm => alarm.active).length;
 
+  const getDisplayDays = (days) => {
+    if (days.length === 0) return 'Every day';
+    const dayNames = {
+      'M': 'Monday',
+      'Tu': 'Tuesday',
+      'W': 'Wednesday',
+      'Th': 'Thursday',
+      'F': 'Friday',
+      'S': 'Saturday',
+      'Su': 'Sunday'
+    };
+    return days.map(day => dayNames[day]).join(', ');
+  };
+
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: '#161622' }}>
       <Text style={{ fontSize: 24, color: 'white', marginBottom: 20 }}>Upcoming Alarms ({activeAlarmsCount})</Text>
@@ -157,7 +162,7 @@ const Alarm = () => {
           }}>
             <TouchableOpacity onPress={() => editAlarm(index)}>
               <Text style={{ fontSize: 36, color: 'white' }}>{moment(item.time).format('HH:mm')}</Text>
-              <Text style={{ color: 'gray' }}>Every day</Text>
+              <Text style={{ color: 'gray' }}>{getDisplayDays(item.days)}</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                 {daysOfWeek.map((day, i) => (
                   <TouchableOpacity key={i} onPress={() => toggleDay(day, index)}>
@@ -235,9 +240,6 @@ const Alarm = () => {
                 onValueChange={(itemValue) => setSelectedSound(itemValue)}
               >
                 <Picker.Item label="Emergency" value="emergency" />
-                {/* <Picker.Item label="Beep" value="beep" />
-                <Picker.Item label="Chime" value="chime" />
-                <Picker.Item label="Alarm" value="alarm" /> */}
               </Picker>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginVertical: 10 }}>
                 {daysOfWeek.map((day, i) => (
