@@ -16,6 +16,7 @@ import profile_new from "../assets/icons/profile_new.png";
 import house from "../assets/icons/house.png";
 import friends from "../assets/icons/friends.png";
 import bell from "../assets/icons/bell.png";
+import add_friend from "../assets/icons/add_friend.png";
 
 export default {
   play,
@@ -36,4 +37,5 @@ export default {
   friends,
   profile_new,
   house,
+  add_friend,
 };

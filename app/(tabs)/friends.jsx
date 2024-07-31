@@ -1,6 +1,6 @@
 import React from 'react';
 import images from '../../constants/images';
-import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 
 const Friends = () => {
   return (
@@ -8,21 +8,25 @@ const Friends = () => {
       <View style={styles.scoreboard}>
         <Text style={styles.title}>Scoreboard 🏆</Text>
         <View style={styles.score}>
+          <Text style={styles.rank}>1st</Text>
           <Image style={styles.avatar} source={images.adam} />
           <Text style={styles.name}>Adam</Text>
           <Text style={styles.points}>1,000</Text>
         </View>
         <View style={styles.score}>
+          <Text style={styles.rank}>2nd</Text>
           <Image style={styles.avatar} source={images.woman} />
           <Text style={styles.name}>Jenny</Text>
           <Text style={styles.points}>899</Text>
         </View>
         <View style={styles.score}>
+          <Text style={styles.rank}>3rd</Text>
           <Image style={styles.avatar} source={images.lee} />
           <Text style={styles.name}>Lee</Text>
           <Text style={styles.points}>340</Text>
         </View>
         <View style={styles.score}>
+          <Text style={styles.rank}>4th</Text>
           <Image style={styles.avatar} source={images.woman} />
           <Text style={styles.name}>You</Text>
           <Text style={styles.points}>240</Text>
@@ -34,17 +38,26 @@ const Friends = () => {
         <View style={styles.track}>
           <Image style={styles.avatar} source={images.adam} />
           <Text style={styles.name}>Adam</Text>
-          <Text style={styles.status}>Awake</Text>
+          <Text style={styles.wakeUpTime}>Wake-up Time: 6:30 AM</Text>
+          <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'green' }]}>
+            <Text style={styles.statusText}>Awake</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.track}>
           <Image style={styles.avatar} source={images.woman} />
           <Text style={styles.name}>Jenny</Text>
-          <Text style={styles.status}>Sleeping</Text>
+          <Text style={styles.wakeUpTime}>Wake-up Time: 7:05 AM</Text>
+          <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'gray' }]}>
+            <Text style={styles.statusText}>Sleeping</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.track}>
           <Image style={styles.avatar} source={images.lee} />
           <Text style={styles.name}>Lee</Text>
-          <Text style={styles.status}>Wake Up!</Text>
+          <Text style={styles.wakeUpTime}>Wake-up Time: 8:00 AM</Text>
+          <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'red' }]}>
+            <Text style={styles.statusText}>Wake Up!</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -71,6 +84,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  rank: {
+    color: 'white',
+    fontSize: 18,
+    marginRight: 10,
+  },
   avatar: {
     width: 40,
     height: 40,
@@ -94,9 +112,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  status: {
-    color: 'green',
-    fontSize: 18,
+  wakeUpTime: {
+    color: 'white',
+    fontSize: 16,
+    marginRight: 10,
+  },
+  statusButton: {
+    padding: 5,
+    borderRadius: 5,
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 
