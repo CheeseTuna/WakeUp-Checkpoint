@@ -6,12 +6,14 @@ import { useGlobalContext } from '../../context/GlobalProvider';
 import { getCurrentUser, getUserData } from '../../lib/appwrite';
 import images from '../../constants/images';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 const Profile = () => {
   const { isLoggedIn, user, isLoading } = useGlobalContext();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [currentDate, setCurrentDate] = useState('');
+  const [profileImage, setProfileImage] = useState(images.woman); // Default profile image
 
   useEffect(() => {
     if (!isLoading) {
@@ -36,6 +38,25 @@ const Profile = () => {
     }
   }, [isLoading, isLoggedIn]);
 
+  const handleImagePicker = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need camera roll permissions to make this work!');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      setProfileImage({ uri: result.uri });
+    }
+  };
+
   if (isLoading) {
     return <View><Text>Loading...</Text></View>;
   }
@@ -46,8 +67,8 @@ const Profile = () => {
         <Text style={styles.profileTitle}>{username}</Text>
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
-            <Image source={images.woman} style={styles.avatar} />
-            <TouchableOpacity style={styles.cameraIcon}>
+            <Image source={profileImage} style={styles.avatar} />
+            <TouchableOpacity style={styles.cameraIcon} onPress={handleImagePicker}>
               <FontAwesome name="camera" size={24} color="black" />
             </TouchableOpacity>
           </View>
@@ -211,4 +232,3 @@ const styles = StyleSheet.create({
 });
 
 export default Profile;
-

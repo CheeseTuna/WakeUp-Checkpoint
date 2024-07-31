@@ -1,23 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, TextInput, Animated, Dimensions, Easing, TouchableWithoutFeedback } from 'react-native';
 import images from '../../constants/images';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, TextInput, Button } from 'react-native';
 import addFriendIcon from '../../assets/icons/add_friend.png';
 
 const Friends = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current; // Initial position is off the screen to the right
 
   const handleAddFriend = () => {
     setModalVisible(true);
+    Animated.timing(slideAnim, {
+      toValue: Dimensions.get('window').width * 0.25, // Slide in to cover 75% of the screen
+      duration: 500, // Adjust the duration as needed
+      easing: Easing.out(Easing.exp), // Adjust the easing function as needed
+      useNativeDriver: false,
+    }).start();
   };
 
-  const handleCloseModal = () => {
-    setModalVisible(false);
-  };
-
-  const handleSearch = () => {
-    // Implement search functionality here
-    console.log(`Searching for: ${searchQuery}`);
+  const closeModal = () => {
+    Animated.timing(slideAnim, {
+      toValue: Dimensions.get('window').width,
+      duration: 500, // Adjust the duration as needed
+      easing: Easing.in(Easing.exp), // Adjust the easing function as needed
+      useNativeDriver: false,
+    }).start(() => setModalVisible(false));
   };
 
   return (
@@ -50,11 +57,11 @@ const Friends = () => {
               <Text style={styles.name}>Lee</Text>
               <Text style={styles.points}>340</Text>
             </View>
-            <View style={styles.score}>
+            <View style={[styles.score, styles.highlight]}>
               <Text style={styles.rank}>4th</Text>
               <Image style={styles.avatar} source={images.woman} />
               <Text style={styles.name}>You</Text>
-              <Text style={styles.points}>240</Text>
+              <Text style={styles.points}>0</Text>
             </View>
           </View>
 
@@ -94,25 +101,41 @@ const Friends = () => {
         </View>
 
         <Modal
-          animationType="slide"
+          animationType="none"
           transparent={true}
           visible={modalVisible}
-          onRequestClose={handleCloseModal}
+          onRequestClose={closeModal}
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>Add Friend</Text>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search by username"
-                placeholderTextColor="#aaa"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              <Button title="Search" onPress={handleSearch} />
-              <Button title="Close" onPress={handleCloseModal} color="red" />
+          <TouchableWithoutFeedback onPress={closeModal}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <Animated.View style={[styles.modalContainer, { transform: [{ translateX: slideAnim }] }]}>
+                  <View style={styles.modalView}>
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search by username"
+                      placeholderTextColor="#aaa"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                    <Text style={styles.friendsListTitle}>Friends List</Text>
+                    <View style={styles.score}>
+                      <Image style={styles.avatar} source={images.adam} />
+                      <Text style={styles.name}>Adam</Text>
+                    </View>
+                    <View style={styles.score}>
+                      <Image style={styles.avatar} source={images.woman} />
+                      <Text style={styles.name}>Jenny</Text>
+                    </View>
+                    <View style={styles.score}>
+                      <Image style={styles.avatar} source={images.lee} />
+                      <Text style={styles.name}>Lee</Text>
+                    </View>
+                  </View>
+                </Animated.View>
+              </TouchableWithoutFeedback>
             </View>
-          </View>
+          </TouchableWithoutFeedback>
         </Modal>
       </View>
     </ScrollView>
@@ -181,6 +204,11 @@ const styles = StyleSheet.create({
     width: 60,
     textAlign: 'right',
   },
+  highlight: {
+    backgroundColor: '#444',  // Change this color as needed for highlighting
+    padding: 10,
+    borderRadius: 10,
+  },
   tracker: {
     marginTop: 20,
   },
@@ -213,23 +241,19 @@ const styles = StyleSheet.create({
     numberOfLines: 1, // Ensures the text is confined to a single line
     adjustsFontSizeToFit: true, // Adjusts the font size to fit within the button
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    width: '75%', // Change the width to 75% of the screen
+    height: '100%',
+    backgroundColor: '#181A20',
   },
   modalView: {
-    width: 300,
+    flex: 1,
     padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
   searchInput: {
     width: '100%',
@@ -238,7 +262,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 10,
-    color: 'black',
+    color: 'white',
+    backgroundColor: '#333',  // Background color for the input to match the theme
+  },
+  friendsListTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });
 
