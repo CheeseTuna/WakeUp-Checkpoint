@@ -9,5 +9,7 @@ import landingscreen from "../assets/images/landingscreen.png";
 import header from "../assets/images/header.png";
 import woman from "../assets/images/woman.png";
 import pheader from "../assets/images/woman.png";
+import adam from "../assets/images/adam.png";
+import lee from "../assets/images/lee.png";
 
-export default { profile, thumbnail, cards, path, logo, logoSmall, empty, landingscreen, header, woman, pheader };
+export default { profile, thumbnail, cards, path, logo, logoSmall, empty, landingscreen, header, woman, pheader, adam, lee };
