@@ -18,8 +18,9 @@ TaskManager.defineTask('ALARM_TASK', async () => {
     console.log('Retrieved alarm sound from AsyncStorage:', alarmSound);
 
     if (alarmSound && soundFiles[alarmSound]) {
+      console.log('Creating sound object for:', alarmSound);
       const { sound } = await Audio.Sound.createAsync(soundFiles[alarmSound]);
-      console.log('Playing sound:', alarmSound);
+      console.log('Sound object created:', sound);
       await sound.playAsync();
       console.log('Sound played successfully');
       return BackgroundFetch.Result.NewData;
