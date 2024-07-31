@@ -1,4 +1,3 @@
-// app/(tabs)/alarm.jsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Modal, TouchableOpacity, Switch, Button } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -149,7 +148,7 @@ const Alarm = () => {
   };
 
   return (
-    <View style={{ flex: 1, padding: 20, backgroundColor: '#161622' }}>
+    <View style={{ flex: 1, padding: 20, paddingTop: 40, backgroundColor: '#161622' }}>
       <Text style={{ fontSize: 24, color: 'white', marginBottom: 20 }}>Upcoming Alarms ({activeAlarmsCount})</Text>
       <FlatList
         data={alarms}

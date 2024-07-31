@@ -22,97 +22,99 @@ const Friends = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Friends</Text>
-        <TouchableOpacity onPress={handleAddFriend}>
-          <Image style={styles.addFriendIcon} source={addFriendIcon} />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.scoreboard}>
-          <Text style={styles.title}>Scoreboard 🏆</Text>
-          <View style={styles.score}>
-            <Text style={styles.rank}>1st</Text>
-            <Image style={styles.avatar} source={images.adam} />
-            <Text style={styles.name}>Adam</Text>
-            <Text style={styles.points}>1,000</Text>
-          </View>
-          <View style={styles.score}>
-            <Text style={styles.rank}>2nd</Text>
-            <Image style={styles.avatar} source={images.woman} />
-            <Text style={styles.name}>Jenny</Text>
-            <Text style={styles.points}>899</Text>
-          </View>
-          <View style={styles.score}>
-            <Text style={styles.rank}>3rd</Text>
-            <Image style={styles.avatar} source={images.lee} />
-            <Text style={styles.name}>Lee</Text>
-            <Text style={styles.points}>340</Text>
-          </View>
-          <View style={styles.score}>
-            <Text style={styles.rank}>4th</Text>
-            <Image style={styles.avatar} source={images.woman} />
-            <Text style={styles.name}>You</Text>
-            <Text style={styles.points}>240</Text>
-          </View>
+      <View style={{ paddingTop: 20 }}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Friends</Text>
+          <TouchableOpacity onPress={handleAddFriend}>
+            <Image style={styles.addFriendIcon} source={addFriendIcon} />
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.tracker}>
-          <Text style={styles.title}>WAKEUP TRACKER</Text>
-          <View style={styles.track}>
-            <Image style={styles.avatar} source={images.adam} />
-            <View style={styles.trackText}>
+        <View style={styles.content}>
+          <View style={styles.scoreboard}>
+            <Text style={styles.title}>Scoreboard 🏆</Text>
+            <View style={styles.score}>
+              <Text style={styles.rank}>1st</Text>
+              <Image style={styles.avatar} source={images.adam} />
               <Text style={styles.name}>Adam</Text>
-              <Text style={styles.wakeUpTime}>Wake-up Time: 6:30 AM</Text>
+              <Text style={styles.points}>1,000</Text>
             </View>
-            <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'green' }]}>
-              <Text style={styles.statusText}>Awake</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.track}>
-            <Image style={styles.avatar} source={images.woman} />
-            <View style={styles.trackText}>
+            <View style={styles.score}>
+              <Text style={styles.rank}>2nd</Text>
+              <Image style={styles.avatar} source={images.woman} />
               <Text style={styles.name}>Jenny</Text>
-              <Text style={styles.wakeUpTime}>Wake-up Time: 7:05 AM</Text>
+              <Text style={styles.points}>899</Text>
             </View>
-            <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'gray' }]}>
-              <Text style={styles.statusText}>Sleeping</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.track}>
-            <Image style={styles.avatar} source={images.lee} />
-            <View style={styles.trackText}>
+            <View style={styles.score}>
+              <Text style={styles.rank}>3rd</Text>
+              <Image style={styles.avatar} source={images.lee} />
               <Text style={styles.name}>Lee</Text>
-              <Text style={styles.wakeUpTime}>Wake-up Time: 8:00 AM</Text>
+              <Text style={styles.points}>340</Text>
             </View>
-            <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'red' }]}>
-              <Text style={styles.statusText}>Wake Up!</Text>
-            </TouchableOpacity>
+            <View style={styles.score}>
+              <Text style={styles.rank}>4th</Text>
+              <Image style={styles.avatar} source={images.woman} />
+              <Text style={styles.name}>You</Text>
+              <Text style={styles.points}>240</Text>
+            </View>
           </View>
-        </View>
-      </View>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={handleCloseModal}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>Add Friend</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by username"
-              placeholderTextColor="#aaa"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <Button title="Search" onPress={handleSearch} />
-            <Button title="Close" onPress={handleCloseModal} color="red" />
+          <View style={styles.tracker}>
+            <Text style={styles.title}>WAKEUP TRACKER</Text>
+            <View style={styles.track}>
+              <Image style={styles.avatar} source={images.adam} />
+              <View style={styles.trackText}>
+                <Text style={styles.name}>Adam</Text>
+                <Text style={styles.wakeUpTime}>Wake-up Time: 6:30 AM</Text>
+              </View>
+              <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'green' }]}>
+                <Text style={styles.statusText}>Awake</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.track}>
+              <Image style={styles.avatar} source={images.woman} />
+              <View style={styles.trackText}>
+                <Text style={styles.name}>Jenny</Text>
+                <Text style={styles.wakeUpTime}>Wake-up Time: 7:05 AM</Text>
+              </View>
+              <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'gray' }]}>
+                <Text style={styles.statusText}>Sleeping</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.track}>
+              <Image style={styles.avatar} source={images.lee} />
+              <View style={styles.trackText}>
+                <Text style={styles.name}>Lee</Text>
+                <Text style={styles.wakeUpTime}>Wake-up Time: 8:00 AM</Text>
+              </View>
+              <TouchableOpacity style={[styles.statusButton, { backgroundColor: 'red' }]}>
+                <Text style={styles.statusText}>Wake Up!</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={handleCloseModal}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalTitle}>Add Friend</Text>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by username"
+                placeholderTextColor="#aaa"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              <Button title="Search" onPress={handleSearch} />
+              <Button title="Close" onPress={handleCloseModal} color="red" />
+            </View>
+          </View>
+        </Modal>
+      </View>
     </ScrollView>
   );
 };
