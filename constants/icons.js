@@ -19,6 +19,7 @@ import bell from "../assets/icons/bell.png";
 import add_friend from "../assets/icons/add_friend.png";
 import remove from "../assets/icons/remove.png";
 import chat from "../assets/icons/chat.png";
+import add from "../assets/icons/add.png";
 
 export default {
   play,
@@ -42,4 +43,5 @@ export default {
   add_friend,
   remove,
   chat,
+  add,
 };
