@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import { useGlobalContext } from '../../context/GlobalProvider';
@@ -39,21 +39,37 @@ const Profile = () => {
   }, [isLoading, isLoggedIn]);
 
   const handleImagePicker = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Sorry, we need camera roll permissions to make this work!');
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Sorry, we need camera roll permissions to make this work!');
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    if (!result.cancelled) {
-      setProfileImage({ uri: result.uri });
+      console.log('ImagePicker result:', result); // Debugging line to see the entire result object
+
+      if (!result.canceled) {
+        if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
+          const imageUri = result.assets[0].uri;
+          console.log('Selected image URI:', imageUri); // Debugging line to check the uri
+          setProfileImage({ uri: imageUri });
+        } else {
+          console.error('Image URI is missing in the result');
+          Alert.alert('Error', 'Image URI is missing in the result');
+        }
+      } else {
+        console.log('Image picker was canceled');
+      }
+    } catch (error) {
+      console.error('Error during image picking:', error);
+      Alert.alert('Error', 'Something went wrong during image picking');
     }
   };
 
