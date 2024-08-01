@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, TextInput, Animated, Dimensions, Easing, TouchableWithoutFeedback } from 'react-native';
 import images from '../../constants/images';
 import addFriendIcon from '../../assets/icons/add_friend.png';
@@ -12,6 +12,10 @@ const Friends = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [addedFriends, setAddedFriends] = useState([]);
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [tab, setTab] = useState('suggestions');
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
   const [friends, setFriends] = useState([
@@ -23,7 +27,7 @@ const Friends = () => {
   const handleAddFriend = () => {
     setModalVisible(true);
     Animated.timing(slideAnim, {
-      toValue: Dimensions.get('window').width * 0.25,
+      toValue: 0,
       duration: 500,
       easing: Easing.out(Easing.exp),
       useNativeDriver: false,
@@ -39,8 +43,17 @@ const Friends = () => {
     }).start(() => setModalVisible(false));
   };
 
-  const removeFriend = (name) => {
+  const removeFriend = async (name) => {
     setFriends(friends.filter(friend => friend.name !== name));
+    setAddedFriends(addedFriends.filter(friend => friend.name !== name));
+
+    try {
+      // Remove friend from database
+      const response = await databases.deleteDocument('66797b11000ca7e40dcc', 'friendsCollectionId', name);
+      console.log('Friend removed:', response);
+    } catch (error) {
+      console.error('Error removing friend:', error);
+    }
   };
 
   const openChat = (name) => {
@@ -49,18 +62,91 @@ const Friends = () => {
 
   const searchUsers = async (query) => {
     try {
+      console.log('Searching for users with username:', query); // Log the search query
       const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b', [
         Query.equal('username', query)
       ]);
+      console.log('Search response:', response); // Log the response
       setSearchResults(response.documents);
     } catch (error) {
       console.error('Error searching users:', error);
     }
   };
 
-  const addFriend = (user) => {
-    setFriends([...friends, { ...user, points: 0, wakeUpTime: '7:00 AM', status: 'Sleeping' }]);
-    setSearchResults([]);
+  const addFriend = async (user) => {
+    // Add user to the addedFriends list
+    setAddedFriends([...addedFriends, user]);
+    setSearchResults(searchResults.filter(result => result.$id !== user.$id));
+
+    try {
+      // Add friend to database with status 'added'
+      const response = await databases.createDocument('66797b11000ca7e40dcc', 'friendsCollectionId', user.$id, {
+        ...user,
+        status: 'added'
+      });
+      console.log('Friend added:', response);
+    } catch (error) {
+      console.error('Error adding friend:', error);
+    }
+  };
+
+  const fetchRandomUsers = async () => {
+    try {
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b');
+      const users = response.documents;
+      const randomUsers = users.sort(() => 0.5 - Math.random()).slice(0, 3);
+      setSuggestions(randomUsers);
+    } catch (error) {
+      console.error('Error fetching random users:', error);
+    }
+  };
+
+  const fetchAddedFriends = async () => {
+    try {
+      // Fetch added friends from database
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', 'friendsCollectionId', [
+        Query.equal('status', 'added')
+      ]);
+      setAddedFriends(response.documents);
+    } catch (error) {
+      console.error('Error fetching added friends:', error);
+    }
+  };
+
+  const fetchRequests = async () => {
+    try {
+      // Fetch friend requests from database
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', 'friendsCollectionId', [
+        Query.equal('status', 'requested')
+      ]);
+      setFriendRequests(response.documents);
+    } catch (error) {
+      console.error('Error fetching friend requests:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'suggestions') {
+      fetchRandomUsers();
+    } else if (tab === 'added') {
+      fetchAddedFriends();
+    } else if (tab === 'requests') {
+      fetchRequests();
+    }
+  }, [tab]);
+
+  const approveFriend = async (friendId) => {
+    try {
+      // Update friend status to 'added'
+      const response = await databases.updateDocument('66797b11000ca7e40dcc', 'friendsCollectionId', friendId, {
+        status: 'added'
+      });
+      console.log('Friend approved:', response);
+      fetchRequests();
+      fetchAddedFriends();
+    } catch (error) {
+      console.error('Error approving friend:', error);
+    }
   };
 
   return (
@@ -127,32 +213,56 @@ const Friends = () => {
                         searchUsers(text);
                       }}
                     />
-                    {searchResults.length > 0 && (
+                    {tab === 'suggestions' && suggestions.length > 0 && (
                       <View style={styles.searchResults}>
-                        {searchResults.map((user, index) => (
+                        {suggestions.map((user, index) => (
                           <View key={index} style={styles.searchResultItem}>
                             <Image style={styles.avatar} source={{ uri: user.avatar }} />
                             <Text style={styles.name}>{user.username}</Text>
                             <TouchableOpacity onPress={() => addFriend(user)}>
-                              <Image style={styles.icon} source={addIcon} />
+                              <Image style={styles.addIcon} source={addIcon} />
                             </TouchableOpacity>
                           </View>
                         ))}
                       </View>
                     )}
-                    <Text style={styles.friendsListTitle}>Friends List ({friends.length})</Text>
-                    {friends.map((friend, index) => (
-                      <View key={index} style={styles.score}>
-                        <Image style={styles.avatar} source={friend.avatar} />
-                        <Text style={styles.name}>{friend.name}</Text>
-                        <TouchableOpacity onPress={() => removeFriend(friend.name)}>
-                          <Image style={styles.icon} source={removeIcon} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => openChat(friend.name)}>
-                          <Image style={styles.icon} source={chatIcon} />
-                        </TouchableOpacity>
+                    {tab === 'added' && addedFriends.length > 0 && (
+                      <View style={styles.searchResults}>
+                        {addedFriends.map((user, index) => (
+                          <View key={index} style={styles.searchResultItem}>
+                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
+                            <Text style={styles.name}>{user.username}</Text>
+                            <TouchableOpacity onPress={() => removeFriend(user.$id)}>
+                              <Image style={styles.icon} source={removeIcon} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
                       </View>
-                    ))}
+                    )}
+                    {tab === 'requests' && friendRequests.length > 0 && (
+                      <View style={styles.searchResults}>
+                        {friendRequests.map((user, index) => (
+                          <View key={index} style={styles.searchResultItem}>
+                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
+                            <Text style={styles.name}>{user.username}</Text>
+                            <TouchableOpacity onPress={() => approveFriend(user.$id)}>
+                              <Text style={styles.approveButton}>Approve</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    <View style={styles.tabContainer}>
+                      <TouchableOpacity onPress={() => setTab('suggestions')} style={[styles.tabButton, tab === 'suggestions' && styles.tabButtonActive]}>
+                        <Text style={styles.tabButtonText}> Suggestions </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setTab('added')} style={[styles.tabButton, tab === 'added' && styles.tabButtonActive]}>
+                        <Text style={styles.tabButtonText}> Added </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setTab('requests')} style={[styles.tabButton, tab === 'requests' && styles.tabButtonActive]}>
+                        <Text style={styles.tabButtonText}> Requests </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </Animated.View>
               </TouchableWithoutFeedback>
@@ -275,7 +385,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    width: '75%', // Change the width to 75% of the screen
+    width: '100%', // Change the width to 100% of the screen
     height: '100%',
     backgroundColor: '#181A20',
   },
@@ -301,17 +411,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  friendsListTitle: {
-    fontSize: 20,
+  approveButton: {
+    color: 'green',
     fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  icon: {
-    width: 20,
-    height: 20,
     marginLeft: 10,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: '#444',
+  },
+  tabButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  tabButtonActive: {
+    borderBottomWidth: 2,
+    borderColor: 'white',
+  },
+  tabButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 
