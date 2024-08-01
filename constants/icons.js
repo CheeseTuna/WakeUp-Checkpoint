@@ -17,6 +17,8 @@ import house from "../assets/icons/house.png";
 import friends from "../assets/icons/friends.png";
 import bell from "../assets/icons/bell.png";
 import add_friend from "../assets/icons/add_friend.png";
+import remove from "../assets/icons/remove.png";
+import chat from "../assets/icons/chat.png";
 
 export default {
   play,
@@ -38,4 +40,6 @@ export default {
   profile_new,
   house,
   add_friend,
+  remove,
+  chat,
 };
