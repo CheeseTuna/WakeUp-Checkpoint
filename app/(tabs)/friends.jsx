@@ -5,8 +5,16 @@ import addFriendIcon from '../../assets/icons/add_friend.png';
 import removeIcon from '../../assets/icons/remove.png';
 import chatIcon from '../../assets/icons/chat.png';
 import addIcon from '../../assets/icons/add.png';
-import { databases } from '../services/appwrite'; // Import Appwrite databases
-import { Query } from 'appwrite'; // Correctly import Query from appwrite
+import { Client, Account, Databases, ID, Query, Permission, Role } from 'appwrite'; // Import necessary Appwrite services
+
+// Initialize Appwrite client
+const client = new Client();
+client
+    .setEndpoint('https://cloud.appwrite.io/v1') // Set your Appwrite endpoint
+    .setProject('667978f100298ba15c44'); // Set your project ID
+
+const account = new Account(client);
+const databases = new Databases(client);
 
 const Friends = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -16,6 +24,8 @@ const Friends = () => {
   const [addedFriends, setAddedFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
   const [tab, setTab] = useState('suggestions');
+  const [userId, setUserId] = useState('');
+  const [friendsCollectionId, setFriendsCollectionId] = useState('');
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
   const [friends, setFriends] = useState([
@@ -43,13 +53,13 @@ const Friends = () => {
     }).start(() => setModalVisible(false));
   };
 
-  const removeFriend = async (name) => {
-    setFriends(friends.filter(friend => friend.name !== name));
-    setAddedFriends(addedFriends.filter(friend => friend.name !== name));
+  const removeFriend = async (friendId) => {
+    setFriends(friends.filter(friend => friend.$id !== friendId));
+    setAddedFriends(addedFriends.filter(friend => friend.$id !== friendId));
 
     try {
       // Remove friend from database
-      const response = await databases.deleteDocument('66797b11000ca7e40dcc', 'friendsCollectionId', name);
+      const response = await databases.deleteDocument('66797b11000ca7e40dcc', friendsCollectionId, friendId);
       console.log('Friend removed:', response);
     } catch (error) {
       console.error('Error removing friend:', error);
@@ -80,10 +90,14 @@ const Friends = () => {
 
     try {
       // Add friend to database with status 'added'
-      const response = await databases.createDocument('66797b11000ca7e40dcc', 'friendsCollectionId', user.$id, {
+      const response = await databases.createDocument('66797b11000ca7e40dcc', friendsCollectionId, ID.unique(), {
         ...user,
         status: 'added'
-      });
+      }, [
+        Permission.read(Role.user(userId)),
+        Permission.update(Role.user(userId)),
+        Permission.delete(Role.user(userId)),
+      ]);
       console.log('Friend added:', response);
     } catch (error) {
       console.error('Error adding friend:', error);
@@ -104,7 +118,7 @@ const Friends = () => {
   const fetchAddedFriends = async () => {
     try {
       // Fetch added friends from database
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', 'friendsCollectionId', [
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', friendsCollectionId, [
         Query.equal('status', 'added')
       ]);
       setAddedFriends(response.documents);
@@ -116,7 +130,7 @@ const Friends = () => {
   const fetchRequests = async () => {
     try {
       // Fetch friend requests from database
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', 'friendsCollectionId', [
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', friendsCollectionId, [
         Query.equal('status', 'requested')
       ]);
       setFriendRequests(response.documents);
@@ -126,6 +140,32 @@ const Friends = () => {
   };
 
   useEffect(() => {
+    const initializeUser = async () => {
+      try {
+        const user = await account.get();
+        setUserId(user.$id);
+
+        // Check if the user already has a friends collection
+        const userFriendsCollectionId = `friends_${user.$id}`;
+        try {
+          await databases.getCollection('66797b11000ca7e40dcc', userFriendsCollectionId);
+          setFriendsCollectionId(userFriendsCollectionId);
+        } catch (error) {
+          // If the collection does not exist, create it
+          const response = await databases.createCollection('66797b11000ca7e40dcc', userFriendsCollectionId, 'Friends Collection', [
+            Permission.read(Role.user(user.$id)),
+            Permission.update(Role.user(user.$id)),
+            Permission.delete(Role.user(user.$id)),
+          ]);
+          setFriendsCollectionId(response.$id);
+        }
+      } catch (error) {
+        console.error('Error initializing user:', error);
+      }
+    };
+
+    initializeUser();
+
     if (tab === 'suggestions') {
       fetchRandomUsers();
     } else if (tab === 'added') {
@@ -138,7 +178,7 @@ const Friends = () => {
   const approveFriend = async (friendId) => {
     try {
       // Update friend status to 'added'
-      const response = await databases.updateDocument('66797b11000ca7e40dcc', 'friendsCollectionId', friendId, {
+      const response = await databases.updateDocument('66797b11000ca7e40dcc', friendsCollectionId, friendId, {
         status: 'added'
       });
       console.log('Friend approved:', response);
@@ -260,7 +300,7 @@ const Friends = () => {
                         <Text style={styles.tabButtonText}> Added </Text>
                       </TouchableOpacity>
                       <TouchableOpacity onPress={() => setTab('requests')} style={[styles.tabButton, tab === 'requests' && styles.tabButtonActive]}>
-                        <Text style={styles.tabButtonText}> Requests </Text>
+                        <Text style={styles.tabButtonText}> Requests </ Text>
                       </TouchableOpacity>
                     </View>
                   </View>
