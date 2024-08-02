@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, TextInput, Animated, Dimensions, Easing, TouchableWithoutFeedback } from 'react-native';
 import images from '../../constants/images';
 import addFriendIcon from '../../assets/icons/add_friend.png';
 import chatIcon from '../../assets/icons/chat.png';
 import addIcon from '../../assets/icons/add.png';
 import { Client, Account, Databases, Query } from 'appwrite'; // Import necessary Appwrite services
+import { debounce } from 'lodash'; // Import debounce from lodash
 
 // Initialize Appwrite client
 const client = new Client();
@@ -49,13 +50,24 @@ const Friends = () => {
   const searchUsers = async (query) => {
     try {
       const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b', [
-        Query.equal('username', query)
+        Query.search('username', query)
       ]);
       setSearchResults(response.documents);
     } catch (error) {
       console.error('Error searching users:', error);
     }
   };
+
+  // Debounced search function
+  const debouncedSearchUsers = useRef(debounce((query) => searchUsers(query), 300)).current;
+
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      debouncedSearchUsers(searchQuery);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
 
   return (
     <ScrollView style={styles.container}>
@@ -87,7 +99,7 @@ const Friends = () => {
             <Text style={styles.title}>WAKEUP TRACKER</Text>
             {friends.map((friend, index) => (
               <View key={index} style={styles.track}>
-                <Image style={styles.avatar} source={friend.avatar} />
+                <Image style={styles.avatar} source={friend.avatar || images.woman} />
                 <View style={styles.trackText}>
                   <Text style={styles.name}>{friend.name}</Text>
                   <Text style={styles.wakeUpTime}>Wake-up Time: {friend.wakeUpTime}</Text>
@@ -111,21 +123,21 @@ const Friends = () => {
               <TouchableWithoutFeedback>
                 <Animated.View style={[styles.modalContainer, { transform: [{ translateX: slideAnim }] }]}>
                   <View style={styles.modalView}>
+                    <TouchableOpacity style={styles.backButton} onPress={closeModal}>
+                      <Text style={styles.backButtonText}> Back </Text>
+                    </TouchableOpacity>
                     <TextInput
                       style={styles.searchInput}
                       placeholder="Search by username"
                       placeholderTextColor="#aaa"
                       value={searchQuery}
-                      onChangeText={(text) => {
-                        setSearchQuery(text);
-                        searchUsers(text);
-                      }}
+                      onChangeText={(text) => setSearchQuery(text)}
                     />
                     {searchResults.length > 0 && (
                       <View style={styles.searchResults}>
                         {searchResults.map((user, index) => (
                           <View key={index} style={styles.searchResultItem}>
-                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
+                            <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
                             <Text style={styles.name}>{user.username}</Text>
                             <TouchableOpacity onPress={() => console.log(`Add ${user.username}`)}>
                               <Image style={styles.addIcon} source={addIcon} />
@@ -263,6 +275,14 @@ const styles = StyleSheet.create({
   modalView: {
     flex: 1,
     padding: 20,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 18,
   },
   searchInput: {
     width: '100%',
