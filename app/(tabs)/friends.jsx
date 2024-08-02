@@ -1,31 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, TextInput, Animated, Dimensions, Easing, TouchableWithoutFeedback } from 'react-native';
 import images from '../../constants/images';
 import addFriendIcon from '../../assets/icons/add_friend.png';
-import removeIcon from '../../assets/icons/remove.png';
 import chatIcon from '../../assets/icons/chat.png';
-import addIcon from '../../assets/icons/add.png';
-import { Client, Account, Databases, ID, Query, Permission, Role } from 'appwrite'; // Import necessary Appwrite services
-
-// Initialize Appwrite client
-const client = new Client();
-client
-    .setEndpoint('https://cloud.appwrite.io/v1') // Set your Appwrite endpoint
-    .setProject('667978f100298ba15c44'); // Set your project ID
-
-const account = new Account(client);
-const databases = new Databases(client);
 
 const Friends = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
-  const [addedFriends, setAddedFriends] = useState([]);
-  const [friendRequests, setFriendRequests] = useState([]);
-  const [tab, setTab] = useState('suggestions');
-  const [userId, setUserId] = useState('');
-  const [friendsCollectionId, setFriendsCollectionId] = useState('');
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
   const [friends, setFriends] = useState([
@@ -51,142 +32,6 @@ const Friends = () => {
       easing: Easing.in(Easing.exp),
       useNativeDriver: false,
     }).start(() => setModalVisible(false));
-  };
-
-  const removeFriend = async (friendId) => {
-    setFriends(friends.filter(friend => friend.$id !== friendId));
-    setAddedFriends(addedFriends.filter(friend => friend.$id !== friendId));
-
-    try {
-      // Remove friend from database
-      const response = await databases.deleteDocument('66797b11000ca7e40dcc', friendsCollectionId, friendId);
-      console.log('Friend removed:', response);
-    } catch (error) {
-      console.error('Error removing friend:', error);
-    }
-  };
-
-  const openChat = (name) => {
-    console.log(`Opening chat with: ${name}`);
-  };
-
-  const searchUsers = async (query) => {
-    try {
-      console.log('Searching for users with username:', query); // Log the search query
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b', [
-        Query.equal('username', query)
-      ]);
-      console.log('Search response:', response); // Log the response
-      setSearchResults(response.documents);
-    } catch (error) {
-      console.error('Error searching users:', error);
-    }
-  };
-
-  const addFriend = async (user) => {
-    // Add user to the addedFriends list
-    setAddedFriends([...addedFriends, user]);
-    setSearchResults(searchResults.filter(result => result.$id !== user.$id));
-
-    try {
-      // Add friend to database with status 'added'
-      const response = await databases.createDocument('66797b11000ca7e40dcc', friendsCollectionId, ID.unique(), {
-        ...user,
-        status: 'added'
-      }, [
-        Permission.read(Role.user(userId)),
-        Permission.update(Role.user(userId)),
-        Permission.delete(Role.user(userId)),
-      ]);
-      console.log('Friend added:', response);
-    } catch (error) {
-      console.error('Error adding friend:', error);
-    }
-  };
-
-  const fetchRandomUsers = async () => {
-    try {
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b');
-      const users = response.documents;
-      const randomUsers = users.sort(() => 0.5 - Math.random()).slice(0, 3);
-      setSuggestions(randomUsers);
-    } catch (error) {
-      console.error('Error fetching random users:', error);
-    }
-  };
-
-  const fetchAddedFriends = async () => {
-    try {
-      // Fetch added friends from database
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', friendsCollectionId, [
-        Query.equal('status', 'added')
-      ]);
-      setAddedFriends(response.documents);
-    } catch (error) {
-      console.error('Error fetching added friends:', error);
-    }
-  };
-
-  const fetchRequests = async () => {
-    try {
-      // Fetch friend requests from database
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', friendsCollectionId, [
-        Query.equal('status', 'requested')
-      ]);
-      setFriendRequests(response.documents);
-    } catch (error) {
-      console.error('Error fetching friend requests:', error);
-    }
-  };
-
-  useEffect(() => {
-    const initializeUser = async () => {
-      try {
-        const user = await account.get();
-        setUserId(user.$id);
-
-        // Check if the user already has a friends collection
-        const userFriendsCollectionId = `friends_${user.$id}`;
-        try {
-          await databases.getCollection('66797b11000ca7e40dcc', userFriendsCollectionId);
-          setFriendsCollectionId(userFriendsCollectionId);
-        } catch (error) {
-          // If the collection does not exist, create it
-          const response = await databases.createCollection('66797b11000ca7e40dcc', userFriendsCollectionId, 'Friends Collection', [
-            Permission.read(Role.user(user.$id)),
-            Permission.update(Role.user(user.$id)),
-            Permission.delete(Role.user(user.$id)),
-          ]);
-          setFriendsCollectionId(response.$id);
-        }
-      } catch (error) {
-        console.error('Error initializing user:', error);
-      }
-    };
-
-    initializeUser();
-
-    if (tab === 'suggestions') {
-      fetchRandomUsers();
-    } else if (tab === 'added') {
-      fetchAddedFriends();
-    } else if (tab === 'requests') {
-      fetchRequests();
-    }
-  }, [tab]);
-
-  const approveFriend = async (friendId) => {
-    try {
-      // Update friend status to 'added'
-      const response = await databases.updateDocument('66797b11000ca7e40dcc', friendsCollectionId, friendId, {
-        status: 'added'
-      });
-      console.log('Friend approved:', response);
-      fetchRequests();
-      fetchAddedFriends();
-    } catch (error) {
-      console.error('Error approving friend:', error);
-    }
   };
 
   return (
@@ -250,59 +95,9 @@ const Friends = () => {
                       value={searchQuery}
                       onChangeText={(text) => {
                         setSearchQuery(text);
-                        searchUsers(text);
                       }}
                     />
-                    {tab === 'suggestions' && suggestions.length > 0 && (
-                      <View style={styles.searchResults}>
-                        {suggestions.map((user, index) => (
-                          <View key={index} style={styles.searchResultItem}>
-                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
-                            <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => addFriend(user)}>
-                              <Image style={styles.addIcon} source={addIcon} />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                    {tab === 'added' && addedFriends.length > 0 && (
-                      <View style={styles.searchResults}>
-                        {addedFriends.map((user, index) => (
-                          <View key={index} style={styles.searchResultItem}>
-                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
-                            <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => removeFriend(user.$id)}>
-                              <Image style={styles.icon} source={removeIcon} />
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                    {tab === 'requests' && friendRequests.length > 0 && (
-                      <View style={styles.searchResults}>
-                        {friendRequests.map((user, index) => (
-                          <View key={index} style={styles.searchResultItem}>
-                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
-                            <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => approveFriend(user.$id)}>
-                              <Text style={styles.approveButton}>Approve</Text>
-                            </TouchableOpacity>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                    <View style={styles.tabContainer}>
-                      <TouchableOpacity onPress={() => setTab('suggestions')} style={[styles.tabButton, tab === 'suggestions' && styles.tabButtonActive]}>
-                        <Text style={styles.tabButtonText}> Suggestions </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => setTab('added')} style={[styles.tabButton, tab === 'added' && styles.tabButtonActive]}>
-                        <Text style={styles.tabButtonText}> Added </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => setTab('requests')} style={[styles.tabButton, tab === 'requests' && styles.tabButtonActive]}>
-                        <Text style={styles.tabButtonText}> Requests </ Text>
-                      </TouchableOpacity>
-                    </View>
+                    {/* Removed search results and buttons logic */}
                   </View>
                 </Animated.View>
               </TouchableWithoutFeedback>
@@ -383,7 +178,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   highlight: {
-    backgroundColor: '#444',  // Change this color as needed for highlighting
+    backgroundColor: '#444',
     padding: 10,
     borderRadius: 10,
   },
@@ -407,7 +202,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 15,
-    minWidth: 120, // Ensures the button is wide enough to accommodate the text
+    minWidth: 120,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 5,
@@ -416,8 +211,8 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
-    numberOfLines: 1, // Ensures the text is confined to a single line
-    adjustsFontSizeToFit: true, // Adjusts the font size to fit within the button
+    numberOfLines: 1,
+    adjustsFontSizeToFit: true,
   },
   modalOverlay: {
     flex: 1,
@@ -425,7 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    width: '100%', // Change the width to 100% of the screen
+    width: '100%',
     height: '100%',
     backgroundColor: '#181A20',
   },
@@ -441,40 +236,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 10,
     color: 'white',
-    backgroundColor: '#333',  // Background color for the input to match the theme
-  },
-  searchResults: {
-    marginBottom: 10,
-  },
-  searchResultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  approveButton: {
-    color: 'green',
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#444',
-  },
-  tabButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  tabButtonActive: {
-    borderBottomWidth: 2,
-    borderColor: 'white',
-  },
-  tabButtonText: {
-    color: 'white',
-    fontSize: 16,
+    backgroundColor: '#333',
   },
 });
 
