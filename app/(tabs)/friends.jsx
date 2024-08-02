@@ -6,7 +6,7 @@ import chatIcon from '../../assets/icons/chat.png';
 import addIcon from '../../assets/icons/add.png';
 import addedIcon from '../../assets/icons/added.png';
 import removeIcon from '../../assets/icons/remove.png'; // Import the remove icon
-import { Client, Account, Databases, Query } from 'appwrite'; // Import necessary Appwrite services
+import { Client, Account, Databases, Query, ID } from 'appwrite'; // Import necessary Appwrite services
 import { debounce } from 'lodash'; // Import debounce from lodash
 
 // Initialize Appwrite client
@@ -24,8 +24,11 @@ const Friends = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [addedUsers, setAddedUsers] = useState([]); // State to keep track of added users
+  const [sentRequests, setSentRequests] = useState([]); // State to keep track of sent requests
+  const [requestsModalVisible, setRequestsModalVisible] = useState(false); // State for requests modal
   const [activeTab, setActiveTab] = useState('suggestions');
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
+  const bottomSlideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current; // Animation for bottom slide
 
   const [friends, setFriends] = useState([
     { name: 'Adam', avatar: images.adam, wakeUpTime: '6:30 AM', points: 1000, status: 'Awake' },
@@ -76,12 +79,39 @@ const Friends = () => {
     }
   };
 
-  const handleAddUser = (user) => {
-    setAddedUsers([...addedUsers, user]);
+  const handleAddUser = async (user) => {
+    try {
+      // Create a friend request document with a pending status
+      const request = await databases.createDocument('66797b11000ca7e40dcc', '66acd4470023494c7bf4', ID.unique(), {
+        userId: user.$id,
+        status: 'pending'
+      });
+      setSentRequests([...sentRequests, { ...user, requestId: request.$id, status: 'pending' }]);
+    } catch (error) {
+      console.error('Error sending friend request:', error);
+    }
   };
 
-  const handleRemoveUser = (user) => {
-    setAddedUsers(addedUsers.filter((addedUser) => addedUser.$id !== user.$id));
+  const handleRemoveUser = async (request) => {
+    try {
+      // Delete the friend request document
+      await databases.deleteDocument('66797b11000ca7e40dcc', '66acd4470023494c7bf4', request.requestId);
+      setSentRequests(sentRequests.filter((sentRequest) => sentRequest.requestId !== request.requestId));
+    } catch (error) {
+      console.error('Error removing friend request:', error);
+    }
+  };
+
+  const fetchRequestsStatus = async () => {
+    try {
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66acd4470023494c7bf4', [
+        Query.equal('status', 'accepted')
+      ]);
+      const acceptedRequests = response.documents;
+      setAddedUsers(acceptedRequests.map((req) => req.userId));
+    } catch (error) {
+      console.error('Error fetching request status:', error);
+    }
   };
 
   // Debounced search function
@@ -95,8 +125,31 @@ const Friends = () => {
     }
   }, [searchQuery]);
 
+  useEffect(() => {
+    fetchRequestsStatus();
+  }, [sentRequests]);
+
   const isUserAdded = (userId) => {
-    return addedUsers.some((user) => user.$id === userId);
+    return addedUsers.includes(userId);
+  };
+
+  const openRequestsModal = () => {
+    setRequestsModalVisible(true);
+    Animated.timing(bottomSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      easing: Easing.out(Easing.exp),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const closeRequestsModal = () => {
+    Animated.timing(bottomSlideAnim, {
+      toValue: Dimensions.get('window').height,
+      duration: 500,
+      easing: Easing.in(Easing.exp),
+      useNativeDriver: false,
+    }).start(() => setRequestsModalVisible(false));
   };
 
   return (
@@ -110,7 +163,7 @@ const Friends = () => {
         </View>
         <View style={styles.content}>
           <View style={styles.scoreboard}>
-            <Text style={styles.title}>Scoreboard 🏆</Text>
+            <Text style={styles.title}>SCOREBOARD 🏆</Text>
             {friends.length === 0 ? (
               <Text style={styles.noFriendsText}>Wow Empty! Add friends in order to compete!</Text>
             ) : (
@@ -154,7 +207,7 @@ const Friends = () => {
                 <Animated.View style={[styles.modalContainer, { transform: [{ translateX: slideAnim }] }]}>
                   <View style={styles.modalView}>
                     <TouchableOpacity style={styles.backButton} onPress={closeModal}>
-                      <Text style={styles.backButtonText}>Back</Text>
+                      <Text style={styles.backButtonText}> Back </Text>
                     </TouchableOpacity>
                     <TextInput
                       style={styles.searchInput}
@@ -181,19 +234,19 @@ const Friends = () => {
                         style={[styles.tabButton, activeTab === 'suggestions' && styles.activeTabButton]}
                         onPress={() => setActiveTab('suggestions')}
                       >
-                        <Text style={styles.tabButtonText}>Suggestions</Text>
+                        <Text style={styles.tabButtonText}> Suggestions </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.tabButton, activeTab === 'added' && styles.activeTabButton]}
                         onPress={() => setActiveTab('added')}
                       >
-                        <Text style={styles.tabButtonText}>Added</Text>
+                        <Text style={styles.tabButtonText}> Added </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.tabButton, activeTab === 'requests' && styles.activeTabButton]}
                         onPress={() => setActiveTab('requests')}
                       >
-                        <Text style={styles.tabButtonText}>Requests</Text>
+                        <Text style={styles.tabButtonText}> Requests </Text>
                       </TouchableOpacity>
                     </View>
                     {activeTab === 'suggestions' && (
@@ -227,9 +280,40 @@ const Friends = () => {
                       </View>
                     )}
                     {activeTab === 'requests' && (
-                      <Text>Requests Content</Text>
-                      // Add your requests tab content here
+                      <View style={styles.requestsContainer}>
+                        <TouchableOpacity onPress={openRequestsModal}>
+                          <Text style={styles.sentRequestsButton}>Sent ></Text>
+                        </TouchableOpacity>
+                      </View>
                     )}
+                  </View>
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={requestsModalVisible}
+          onRequestClose={closeRequestsModal}
+        >
+          <TouchableWithoutFeedback onPress={closeRequestsModal}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <Animated.View style={[styles.requestsModalContainer, { transform: [{ translateY: bottomSlideAnim }] }]}>
+                  <View style={styles.requestsModalView}>
+                    <Text style={styles.requestsTitle}>Sent Requests</Text>
+                    {sentRequests.map((request, index) => (
+                      <View key={index} style={styles.requestItem}>
+                        <Image style={styles.avatar} source={{ uri: request.avatar || images.woman }} />
+                        <Text style={styles.name}>{request.username}</Text>
+                        <TouchableOpacity onPress={() => handleRemoveUser(request)}>
+                          <Image style={styles.removeIcon} source={removeIcon} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
                   </View>
                 </Animated.View>
               </TouchableWithoutFeedback>
@@ -401,7 +485,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     backgroundColor: '#333',
-    borderRadius: 5,
+    borderRadius: 15,
     marginHorizontal: 5,
   },
   activeTabButton: {
@@ -442,6 +526,39 @@ const styles = StyleSheet.create({
     width: 21,
     height: 17,
     marginLeft: 10,
+  },
+  requestsContainer: {
+    marginBottom: 10,
+  },
+  sentRequestsButton: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    padding: 10,
+    backgroundColor: '#333',
+    borderRadius: 15,
+  },
+  requestsModalContainer: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height: '80%',
+    backgroundColor: '#181A20',
+    padding: 20,
+  },
+  requestsModalView: {
+    flex: 1,
+  },
+  requestsTitle: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  requestItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
 });
 
