@@ -26,6 +26,7 @@ const Alarm = () => {
   const [sound, setSound] = useState();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSound, setCurrentSound] = useState('');
+  const [playingAlarmIndex, setPlayingAlarmIndex] = useState(null);
 
   const daysOfWeek = ['M', 'Tu', 'W', 'Th', 'F', 'S', 'Su'];
 
@@ -37,10 +38,11 @@ const Alarm = () => {
       : undefined;
   }, [sound]);
 
-  const playSound = async (soundName) => {
-    if (isPlaying && currentSound === soundName) {
+  const playSound = async (soundName, index) => {
+    if (isPlaying && currentSound === soundName && playingAlarmIndex === index) {
       await sound.stopAsync();
       setIsPlaying(false);
+      setPlayingAlarmIndex(null);
       return;
     }
 
@@ -61,6 +63,7 @@ const Alarm = () => {
     setSound(newSound);
     setCurrentSound(soundName);
     setIsPlaying(true);
+    setPlayingAlarmIndex(index);
     await newSound.playAsync();
   };
 
@@ -181,7 +184,7 @@ const Alarm = () => {
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
                 <Text style={{ color: 'white' }}>Alarm sound</Text>
-                <Button title={isPlaying && currentSound === item.sound ? "Stop" : "Play"} onPress={() => playSound(item.sound)} />
+                <Button title={isPlaying && currentSound === item.sound && playingAlarmIndex === index ? "Stop" : "Play"} onPress={() => playSound(item.sound, index)} />
               </View>
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -258,7 +261,7 @@ const Alarm = () => {
                 ))}
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10 }}>
-                <Button title={isPlaying && currentSound === selectedSound ? "Stop" : "Play"} onPress={() => playSound(selectedSound)} />
+                <Button title={isPlaying && currentSound === selectedSound && playingAlarmIndex === null ? "Stop" : "Play"} onPress={() => playSound(selectedSound, null)} />
                 <Button title="Cancel" onPress={resetModal} />
                 <Button title={isEditing ? "Save" : "Add"} onPress={addOrEditAlarm} />
               </View>
