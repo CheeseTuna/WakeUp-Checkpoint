@@ -3,10 +3,22 @@ import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, Tex
 import images from '../../constants/images';
 import addFriendIcon from '../../assets/icons/add_friend.png';
 import chatIcon from '../../assets/icons/chat.png';
+import addIcon from '../../assets/icons/add.png';
+import { Client, Account, Databases, Query } from 'appwrite'; // Import necessary Appwrite services
+
+// Initialize Appwrite client
+const client = new Client();
+client
+    .setEndpoint('https://cloud.appwrite.io/v1') // Set your Appwrite endpoint
+    .setProject('667978f100298ba15c44'); // Set your project ID
+
+const account = new Account(client);
+const databases = new Databases(client);
 
 const Friends = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
   const [friends, setFriends] = useState([
@@ -34,6 +46,17 @@ const Friends = () => {
     }).start(() => setModalVisible(false));
   };
 
+  const searchUsers = async (query) => {
+    try {
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b', [
+        Query.equal('username', query)
+      ]);
+      setSearchResults(response.documents);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={{ paddingTop: 20 }}>
@@ -47,7 +70,7 @@ const Friends = () => {
           <View style={styles.scoreboard}>
             <Text style={styles.title}>Scoreboard 🏆</Text>
             {friends.length === 0 ? (
-              <Text style={styles.noFriendsText}>Add friends in order to compete!</Text>
+              <Text style={styles.noFriendsText}>Wow Empty! Add friends in order to compete!</Text>
             ) : (
               friends.map((friend, index) => (
                 <View key={index} style={styles.score}>
@@ -95,9 +118,22 @@ const Friends = () => {
                       value={searchQuery}
                       onChangeText={(text) => {
                         setSearchQuery(text);
+                        searchUsers(text);
                       }}
                     />
-                    {/* Removed search results and buttons logic */}
+                    {searchResults.length > 0 && (
+                      <View style={styles.searchResults}>
+                        {searchResults.map((user, index) => (
+                          <View key={index} style={styles.searchResultItem}>
+                            <Image style={styles.avatar} source={{ uri: user.avatar }} />
+                            <Text style={styles.name}>{user.username}</Text>
+                            <TouchableOpacity onPress={() => console.log(`Add ${user.username}`)}>
+                              <Image style={styles.addIcon} source={addIcon} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </Animated.View>
               </TouchableWithoutFeedback>
@@ -238,6 +274,19 @@ const styles = StyleSheet.create({
     color: 'white',
     backgroundColor: '#333',
   },
+  searchResults: {
+    marginBottom: 10,
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  addIcon: {
+    width: 21,
+    height: 17,
+    marginTop: 4,
+  }
 });
 
 export default Friends;
