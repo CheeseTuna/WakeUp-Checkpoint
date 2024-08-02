@@ -20,6 +20,7 @@ import add_friend from "../assets/icons/add_friend.png";
 import remove from "../assets/icons/remove.png";
 import chat from "../assets/icons/chat.png";
 import add from "../assets/icons/add.png";
+import added from "../assets/icons/added.png";
 
 export default {
   play,
@@ -44,4 +45,5 @@ export default {
   remove,
   chat,
   add,
+  added,
 };

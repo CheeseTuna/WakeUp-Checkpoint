@@ -4,6 +4,8 @@ import images from '../../constants/images';
 import addFriendIcon from '../../assets/icons/add_friend.png';
 import chatIcon from '../../assets/icons/chat.png';
 import addIcon from '../../assets/icons/add.png';
+import addedIcon from '../../assets/icons/added.png';
+import removeIcon from '../../assets/icons/remove.png'; // Import the remove icon
 import { Client, Account, Databases, Query } from 'appwrite'; // Import necessary Appwrite services
 import { debounce } from 'lodash'; // Import debounce from lodash
 
@@ -21,6 +23,7 @@ const Friends = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [addedUsers, setAddedUsers] = useState([]); // State to keep track of added users
   const [activeTab, setActiveTab] = useState('suggestions');
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
@@ -73,9 +76,12 @@ const Friends = () => {
     }
   };
 
-  const handleAddUser = (userId) => {
-    console.log(`Add user with ID: ${userId}`);
-    // Implement your add user logic here
+  const handleAddUser = (user) => {
+    setAddedUsers([...addedUsers, user]);
+  };
+
+  const handleRemoveUser = (user) => {
+    setAddedUsers(addedUsers.filter((addedUser) => addedUser.$id !== user.$id));
   };
 
   // Debounced search function
@@ -88,6 +94,10 @@ const Friends = () => {
       setSearchResults([]);
     }
   }, [searchQuery]);
+
+  const isUserAdded = (userId) => {
+    return addedUsers.some((user) => user.$id === userId);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -144,7 +154,7 @@ const Friends = () => {
                 <Animated.View style={[styles.modalContainer, { transform: [{ translateX: slideAnim }] }]}>
                   <View style={styles.modalView}>
                     <TouchableOpacity style={styles.backButton} onPress={closeModal}>
-                      <Text style={styles.backButtonText}> Back </Text>
+                      <Text style={styles.backButtonText}>Back</Text>
                     </TouchableOpacity>
                     <TextInput
                       style={styles.searchInput}
@@ -159,8 +169,8 @@ const Friends = () => {
                           <View key={index} style={styles.searchResultItem}>
                             <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
                             <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => handleAddUser(user.$id)}>
-                              <Image style={styles.addIcon} source={addIcon} />
+                            <TouchableOpacity onPress={() => handleAddUser(user)}>
+                              <Image style={styles.addIcon} source={isUserAdded(user.$id) ? addedIcon : addIcon} />
                             </TouchableOpacity>
                           </View>
                         ))}
@@ -171,19 +181,19 @@ const Friends = () => {
                         style={[styles.tabButton, activeTab === 'suggestions' && styles.activeTabButton]}
                         onPress={() => setActiveTab('suggestions')}
                       >
-                        <Text style={styles.tabButtonText}> Suggestions </Text>
+                        <Text style={styles.tabButtonText}>Suggestions</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.tabButton, activeTab === 'added' && styles.activeTabButton]}
                         onPress={() => setActiveTab('added')}
                       >
-                        <Text style={styles.tabButtonText}> Added </Text>
+                        <Text style={styles.tabButtonText}>Added</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.tabButton, activeTab === 'requests' && styles.activeTabButton]}
                         onPress={() => setActiveTab('requests')}
                       >
-                        <Text style={styles.tabButtonText}> Requests </Text>
+                        <Text style={styles.tabButtonText}>Requests</Text>
                       </TouchableOpacity>
                     </View>
                     {activeTab === 'suggestions' && (
@@ -192,16 +202,29 @@ const Friends = () => {
                           <View key={index} style={styles.suggestionItem}>
                             <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
                             <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => handleAddUser(user.$id)}>
-                              <Image style={styles.addIcon} source={addIcon} />
+                            <TouchableOpacity onPress={() => handleAddUser(user)}>
+                              <Image style={styles.addIcon} source={isUserAdded(user.$id) ? addedIcon : addIcon} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setSuggestions(suggestions.filter((suggestion) => suggestion.$id !== user.$id))}>
+                              <Image style={styles.removeIcon} source={removeIcon} />
                             </TouchableOpacity>
                           </View>
                         ))}
                       </View>
                     )}
                     {activeTab === 'added' && (
-                      <Text>Added Content</Text>
-                      // Add your added tab content here
+                      <View style={styles.addedContainer}>
+                        <Text style={styles.addedTitle}>MY FRIENDS ({addedUsers.length})</Text>
+                        {addedUsers.map((user, index) => (
+                          <View key={index} style={styles.addedItem}>
+                            <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
+                            <Text style={styles.name}>{user.username}</Text>
+                            <TouchableOpacity onPress={() => handleRemoveUser(user)}>
+                              <Image style={styles.removeIcon} source={removeIcon} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
                     )}
                     {activeTab === 'requests' && (
                       <Text>Requests Content</Text>
@@ -395,6 +418,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  addedContainer: {
+    marginBottom: 10,
+  },
+  addedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  addedTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  addedIcon: {
+    width: 21,
+    height: 17,
+    marginLeft: 10,
+  },
+  removeIcon: {
+    width: 21,
+    height: 17,
+    marginLeft: 10,
   },
 });
 
