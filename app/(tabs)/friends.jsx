@@ -20,6 +20,8 @@ const Friends = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [activeTab, setActiveTab] = useState('suggestions');
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
 
   const [friends, setFriends] = useState([
@@ -30,6 +32,8 @@ const Friends = () => {
 
   const handleAddFriend = () => {
     setModalVisible(true);
+    setActiveTab('suggestions'); // Automatically select suggestions tab
+    fetchRandomUsers(); // Fetch random users for suggestions
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 500,
@@ -56,6 +60,22 @@ const Friends = () => {
     } catch (error) {
       console.error('Error searching users:', error);
     }
+  };
+
+  const fetchRandomUsers = async () => {
+    try {
+      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b', [
+        Query.limit(10)
+      ]);
+      setSuggestions(response.documents);
+    } catch (error) {
+      console.error('Error fetching random users:', error);
+    }
+  };
+
+  const handleAddUser = (userId) => {
+    console.log(`Add user with ID: ${userId}`);
+    // Implement your add user logic here
   };
 
   // Debounced search function
@@ -139,12 +159,53 @@ const Friends = () => {
                           <View key={index} style={styles.searchResultItem}>
                             <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
                             <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => console.log(`Add ${user.username}`)}>
+                            <TouchableOpacity onPress={() => handleAddUser(user.$id)}>
                               <Image style={styles.addIcon} source={addIcon} />
                             </TouchableOpacity>
                           </View>
                         ))}
                       </View>
+                    )}
+                    <View style={styles.tabContainer}>
+                      <TouchableOpacity
+                        style={[styles.tabButton, activeTab === 'suggestions' && styles.activeTabButton]}
+                        onPress={() => setActiveTab('suggestions')}
+                      >
+                        <Text style={styles.tabButtonText}> Suggestions </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.tabButton, activeTab === 'added' && styles.activeTabButton]}
+                        onPress={() => setActiveTab('added')}
+                      >
+                        <Text style={styles.tabButtonText}> Added </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.tabButton, activeTab === 'requests' && styles.activeTabButton]}
+                        onPress={() => setActiveTab('requests')}
+                      >
+                        <Text style={styles.tabButtonText}> Requests </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {activeTab === 'suggestions' && (
+                      <View style={styles.suggestionsContainer}>
+                        {suggestions.map((user, index) => (
+                          <View key={index} style={styles.suggestionItem}>
+                            <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
+                            <Text style={styles.name}>{user.username}</Text>
+                            <TouchableOpacity onPress={() => handleAddUser(user.$id)}>
+                              <Image style={styles.addIcon} source={addIcon} />
+                            </TouchableOpacity>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    {activeTab === 'added' && (
+                      <Text>Added Content</Text>
+                      // Add your added tab content here
+                    )}
+                    {activeTab === 'requests' && (
+                      <Text>Requests Content</Text>
+                      // Add your requests tab content here
                     )}
                   </View>
                 </Animated.View>
@@ -306,7 +367,35 @@ const styles = StyleSheet.create({
     width: 21,
     height: 17,
     marginTop: 4,
-  }
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#333',
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  activeTabButton: {
+    backgroundColor: '#555',
+  },
+  tabButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  suggestionsContainer: {
+    marginBottom: 10,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
 });
 
 export default Friends;
