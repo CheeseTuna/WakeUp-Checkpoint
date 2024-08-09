@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { account } from "../services/appwrite";
 import {
   View,
   Text,
@@ -22,6 +23,7 @@ import { useGlobalContext } from "../../context/GlobalProvider";
 import { getCurrentUser } from "../../lib/appwrite";
 import images from "../../constants/images";
 import { useRouter } from "expo-router";
+console.log("Account object: ", account);
 
 const { width, height } = Dimensions.get("window");
 
@@ -35,7 +37,46 @@ const Profile = () => {
   const [currentDate, setCurrentDate] = useState("");
   const [editVisible, setEditVisible] = useState(false);
   const [profileImage, setProfileImage] = useState(images.woman);
-  const slideAnim = useRef(new Animated.Value(width)).current; // Start with slideAnim set to screen width (right side)
+  const slideAnim = useRef(new Animated.Value(width)).current;
+
+  const updateUsername = async () => {
+    try {
+      const response = await account.updateName(username);
+      console.log("Username updated:", response);
+    } catch (error) {
+      console.error("Error updating username:", error);
+    }
+  };
+  const updateEmail = async () => {
+    try {
+      const response = await account.updateEmail(email, password); // Include 'password' as the second parameter
+      console.log("Email updated:", response);
+    } catch (error) {
+      console.error("Error updating email:", error);
+    }
+  };
+
+  const updatePassword = async () => {
+    try {
+      const response = await account.updatePassword(password);
+      console.log("Password updated:", response);
+    } catch (error) {
+      console.error("Error updating password:", error);
+    }
+  };
+  const validateAndSavePassword = async () => {
+    if (password === reenterp) {
+      await account.updatePassword();
+    } else {
+      alert("Passwords do not match");
+    }
+  };
+  const handleSave = async () => {
+    await updateUsername();
+    await updateEmail();
+    await validateAndSavePassword();
+    alert("Profile saved successfully!");
+  };
 
   useEffect(() => {
     if (!isLoading) {
@@ -63,7 +104,7 @@ const Profile = () => {
   const toggleEditProfile = () => {
     setEditVisible(!editVisible);
     Animated.timing(slideAnim, {
-      toValue: 0, // Slide in from the right
+      toValue: 0,
       duration: 500,
       useNativeDriver: true,
     }).start();
@@ -96,11 +137,6 @@ const Profile = () => {
     if (!result.canceled) {
       setProfileImage({ uri: result.uri });
     }
-  };
-
-  const handleSave = () => {
-    // Logic for saving the profile details goes here
-    alert("Profile saved successfully!");
   };
 
   if (isLoading) {
@@ -232,7 +268,7 @@ const Profile = () => {
                       />
                     </View>
                     <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>Password</Text>
+                      <Text style={styles.inputLabel}>Current Password</Text>
                       <TextInput
                         style={styles.input}
                         value={password}
@@ -241,7 +277,7 @@ const Profile = () => {
                       />
                     </View>
                     <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>Re-enter Password</Text>
+                      <Text style={styles.inputLabel}>New Password</Text>
                       <TextInput
                         style={styles.input}
                         value={reenterp}
