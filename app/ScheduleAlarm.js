@@ -4,9 +4,9 @@ import { View, Button } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
-const ScheduleAlarm = () => {
-  const [date, setDate] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
+const ScheduleAlarm = ({ date = new Date(), showTimePicker = false }) => {
+  const [selectedDate, setSelectedDate] = useState(date);
+  const [isTimePickerVisible, setIsTimePickerVisible] = useState(showTimePicker);
 
   const scheduleAlarm = async () => {
     const trigger = new Date(date.getTime());

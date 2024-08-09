@@ -1,21 +1,30 @@
 // app/index.jsx
-import React, { useEffect } from 'react';
-import { SafeAreaView, ScrollView, View, Image, Text, LogBox } from 'react-native';
-import { Redirect, router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { registerBackgroundTask } from './backgroundTasks';
-import ScheduleAlarm from './ScheduleAlarm';
-import * as Notifications from 'expo-notifications';
-import CustomButton from '../components/CustomButton';
-import { useGlobalContext } from '../context/GlobalProvider';
-import { images } from '../constants';
+import React, { useEffect } from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Image,
+  Text,
+  LogBox,
+} from "react-native";
+import { Redirect, router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { registerBackgroundTask } from "./backgroundTasks";
+import ScheduleAlarm from "./ScheduleAlarm";
+import * as Notifications from "expo-notifications";
+import CustomButton from "../components/CustomButton";
+import { useGlobalContext } from "../context/GlobalProvider";
+import { images } from "../constants";
 
-LogBox.ignoreLogs(['Support for defaultProps will be removed from memo components in a future major release.']);
+LogBox.ignoreLogs([
+  "Support for defaultProps will be removed from memo components in a future major release.",
+]);
 
 const configureNotifications = async () => {
   const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') {
-    alert('You need to enable notifications for the alarm to work.');
+  if (status !== "granted") {
+    alert("You need to enable notifications for the alarm to work.");
     return;
   }
 
@@ -40,8 +49,11 @@ export default function App() {
 
   return (
     <SafeAreaView className="bg-primary h-full">
-      <ScrollView contentContainerStyle={{ height: '100%' }}>
-        <View className="w-full flex justify-center items-center min-h[85vh] px-4">
+      <ScrollView contentContainerStyle={{ height: "100%" }}>
+        <View
+          className="w-full flex justify-center items-center min-h[85vh] px-4"
+          style={{ marginTop: 20 }}
+        >
           <Image
             source={images.header}
             className="w-[130px] h-[84px]"
@@ -57,8 +69,7 @@ export default function App() {
           <View className="relative mt-5">
             <Text className="text-2xl text-white font-bold text-center">
               Race to Silence Alarms{"\n"}
-              with WakeUp{" "}
-              <Text className="text-secondary-200">CheckPoint</Text>
+              with WakeUp <Text className="text-secondary-200">CheckPoint</Text>
             </Text>
 
             <Image
@@ -74,11 +85,10 @@ export default function App() {
 
           <CustomButton
             title="Continue with Email"
-            handlePress={() => router.push('log-in')}
+            handlePress={() => router.push("log-in")}
             containerStyles="w-full mt-7"
           />
         </View>
-        <ScheduleAlarm />
       </ScrollView>
       <StatusBar backgroundColor="#161622" style="light" />
     </SafeAreaView>
