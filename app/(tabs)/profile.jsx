@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,16 +8,22 @@ import {
   ImageBackground,
   Animated,
   Dimensions,
-  TextInput, // <- Import TextInput
+  TextInput,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import { getCurrentUser } from "../../lib/appwrite";
 import images from "../../constants/images";
 import { useRouter } from "expo-router";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const Profile = () => {
   const { isLoggedIn, isLoading } = useGlobalContext();
@@ -28,7 +34,8 @@ const Profile = () => {
   const [username, setUsername] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [editVisible, setEditVisible] = useState(false);
-  const slideAnim = useState(new Animated.Value(width))[0];
+  const [profileImage, setProfileImage] = useState(images.woman);
+  const slideAnim = useRef(new Animated.Value(width)).current; // Start with slideAnim set to screen width (right side)
 
   useEffect(() => {
     if (!isLoading) {
@@ -56,19 +63,39 @@ const Profile = () => {
   const toggleEditProfile = () => {
     setEditVisible(!editVisible);
     Animated.timing(slideAnim, {
-      toValue: editVisible ? width : 0,
-      duration: 300,
+      toValue: 0, // Slide in from the right
+      duration: 500,
       useNativeDriver: true,
     }).start();
   };
 
   const closeEditProfile = () => {
-    setEditVisible(false);
     Animated.timing(slideAnim, {
-      toValue: width,
-      duration: 300,
+      toValue: width, // Slide out to the right
+      duration: 500,
       useNativeDriver: true,
-    }).start();
+    }).start(() => setEditVisible(false));
+  };
+
+  const pickImage = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      alert("Permission to access camera roll is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setProfileImage({ uri: result.uri });
+    }
   };
 
   if (isLoading) {
@@ -88,8 +115,8 @@ const Profile = () => {
         <Text style={styles.profileTitle}>{username}</Text>
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
-            <Image source={images.woman} style={styles.avatar} />
-            <TouchableOpacity style={styles.cameraIcon}>
+            <Image source={profileImage} style={styles.avatar} />
+            <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
               <FontAwesome name="camera" size={24} color="black" />
             </TouchableOpacity>
           </View>
@@ -151,56 +178,79 @@ const Profile = () => {
       </View>
 
       {/* Edit Profile Slide-in */}
-      {editVisible && (
-        <Animated.View
-          style={[
-            styles.editProfileContainer,
-            { transform: [{ translateX: slideAnim }] },
-          ]}
-        >
-          <View style={styles.editProfileHeaderContainer}>
-            <Text style={styles.editProfileHeader}>Edit Profile</Text>
-            <TouchableOpacity
-              onPress={closeEditProfile}
-              style={styles.backButton}
-            >
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
+      <Modal
+        animationType="none"
+        transparent={true}
+        visible={editVisible}
+        onRequestClose={closeEditProfile}
+      >
+        <TouchableWithoutFeedback onPress={closeEditProfile}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <Animated.View
+                style={[
+                  styles.editProfileContainer,
+                  { transform: [{ translateX: slideAnim }] }, // Slide horizontally
+                ]}
+              >
+                <KeyboardAvoidingView
+                  behavior={Platform.OS === "ios" ? "padding" : "height"}
+                  style={{ flex: 1 }}
+                >
+                  <ScrollView
+                    contentContainerStyle={styles.scrollViewContent}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    <View style={styles.editProfileHeaderContainer}>
+                      <Text style={styles.editProfileHeader}>Edit Profile</Text>
+                      <TouchableOpacity
+                        onPress={closeEditProfile}
+                        style={styles.backButton}
+                      >
+                        <Text style={styles.backButtonText}>Back</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Username</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={username}
+                        onChangeText={setUsername}
+                      />
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Email</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={email}
+                        onChangeText={setEmail}
+                      />
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Password</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                      />
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Re-enter Password</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={reenterp}
+                        onChangeText={setReEnterP}
+                        secureTextEntry
+                      />
+                    </View>
+                  </ScrollView>
+                </KeyboardAvoidingView>
+              </Animated.View>
+            </TouchableWithoutFeedback>
           </View>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Username</Text>
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Re-enter Password</Text>
-            <TextInput
-              style={styles.input}
-              value={reenterp}
-              onChangeText={setReEnterP}
-            />
-          </View>
-        </Animated.View>
-      )}
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -307,13 +357,21 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   editProfileContainer: {
+    width: "100%",
+    height: "100%", // Ensure it covers the full height
+    backgroundColor: "#161622",
+    zIndex: 10, // Ensure it is above other components
+    borderTopLeftRadius: 20, // Optional, for rounded corners
+    borderTopRightRadius: 20, // Optional, for rounded corners
+    paddingTop: 20,
     position: "absolute",
     top: 0,
     right: 0,
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#161622",
-    paddingTop: 40, // <- Add padding at the top
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   editProfileHeaderContainer: {
     flexDirection: "row",
@@ -349,6 +407,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     fontSize: 16,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
 });
 

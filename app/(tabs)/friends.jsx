@@ -1,44 +1,79 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, TextInput, Animated, Dimensions, Easing, TouchableWithoutFeedback } from 'react-native';
-import images from '../../constants/images';
-import addFriendIcon from '../../assets/icons/add_friend.png';
-import chatIcon from '../../assets/icons/chat.png';
-import addIcon from '../../assets/icons/add.png';
-import addedIcon from '../../assets/icons/added.png';
-import removeIcon from '../../assets/icons/remove.png'; // Import the remove icon
-import { Client, Account, Databases, Query, ID } from 'appwrite'; // Import necessary Appwrite services
-import { debounce } from 'lodash'; // Import debounce from lodash
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Animated,
+  Dimensions,
+  Easing,
+  TouchableWithoutFeedback,
+} from "react-native";
+import images from "../../constants/images";
+import addFriendIcon from "../../assets/icons/add_friend.png";
+import chatIcon from "../../assets/icons/chat.png";
+import addIcon from "../../assets/icons/add.png";
+import addedIcon from "../../assets/icons/added.png";
+import removeIcon from "../../assets/icons/remove.png"; // Import the remove icon
+import { Client, Account, Databases, Query, ID } from "appwrite"; // Import necessary Appwrite services
+import { debounce } from "lodash"; // Import debounce from lodash
 
 // Initialize Appwrite client
 const client = new Client();
 client
-    .setEndpoint('https://cloud.appwrite.io/v1') // Set your Appwrite endpoint
-    .setProject('667978f100298ba15c44'); // Set your project ID
+  .setEndpoint("https://cloud.appwrite.io/v1") // Set your Appwrite endpoint
+  .setProject("667978f100298ba15c44"); // Set your project ID
 
 const account = new Account(client);
 const databases = new Databases(client);
 
 const Friends = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [addedUsers, setAddedUsers] = useState([]); // State to keep track of added users
   const [sentRequests, setSentRequests] = useState([]); // State to keep track of sent requests
   const [requestsModalVisible, setRequestsModalVisible] = useState(false); // State for requests modal
-  const [activeTab, setActiveTab] = useState('suggestions');
-  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current;
-  const bottomSlideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current; // Animation for bottom slide
+  const [activeTab, setActiveTab] = useState("suggestions");
+  const slideAnim = useRef(
+    new Animated.Value(Dimensions.get("window").width)
+  ).current;
+  const bottomSlideAnim = useRef(
+    new Animated.Value(Dimensions.get("window").height)
+  ).current; // Animation for bottom slide
 
   const [friends, setFriends] = useState([
-    { name: 'Adam', avatar: images.adam, wakeUpTime: '6:30 AM', points: 1000, status: 'Awake' },
-    { name: 'Jenny', avatar: images.woman, wakeUpTime: '7:05 AM', points: 899, status: 'Sleeping' },
-    { name: 'Lee', avatar: images.lee, wakeUpTime: '8:00 AM', points: 340, status: 'Wake Up!' },
+    {
+      name: "Adam",
+      avatar: images.adam,
+      wakeUpTime: "6:30 AM",
+      points: 1000,
+      status: "Awake",
+    },
+    {
+      name: "Jenny",
+      avatar: images.woman,
+      wakeUpTime: "7:05 AM",
+      points: 899,
+      status: "Sleeping",
+    },
+    {
+      name: "Lee",
+      avatar: images.lee,
+      wakeUpTime: "8:00 AM",
+      points: 340,
+      status: "Wake Up!",
+    },
   ]);
 
   const handleAddFriend = () => {
     setModalVisible(true);
-    setActiveTab('suggestions'); // Automatically select suggestions tab
+    setActiveTab("suggestions"); // Automatically select suggestions tab
     fetchRandomUsers(); // Fetch random users for suggestions
     Animated.timing(slideAnim, {
       toValue: 0,
@@ -50,7 +85,7 @@ const Friends = () => {
 
   const closeModal = () => {
     Animated.timing(slideAnim, {
-      toValue: Dimensions.get('window').width,
+      toValue: Dimensions.get("window").width,
       duration: 500,
       easing: Easing.in(Easing.exp),
       useNativeDriver: false,
@@ -59,63 +94,87 @@ const Friends = () => {
 
   const searchUsers = async (query) => {
     try {
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b', [
-        Query.search('username', query)
-      ]);
+      const response = await databases.listDocuments(
+        "66797b11000ca7e40dcc",
+        "66797b6f00391798a93b",
+        [Query.search("username", query)]
+      );
       setSearchResults(response.documents);
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error("Error searching users:", error);
     }
   };
 
   const fetchRandomUsers = async () => {
     try {
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66797b6f00391798a93b', [
-        Query.limit(10)
-      ]);
+      const response = await databases.listDocuments(
+        "66797b11000ca7e40dcc",
+        "66797b6f00391798a93b",
+        [Query.limit(10)]
+      );
       setSuggestions(response.documents);
     } catch (error) {
-      console.error('Error fetching random users:', error);
+      console.error("Error fetching random users:", error);
     }
   };
 
   const handleAddUser = async (user) => {
     try {
       // Create a friend request document with a pending status
-      const request = await databases.createDocument('66797b11000ca7e40dcc', '66acd4470023494c7bf4', ID.unique(), {
-        userId: user.$id,
-        status: 'pending'
-      });
-      setSentRequests([...sentRequests, { ...user, requestId: request.$id, status: 'pending' }]);
+      const request = await databases.createDocument(
+        "66797b11000ca7e40dcc",
+        "66acd4470023494c7bf4",
+        ID.unique(),
+        {
+          userId: user.$id,
+          status: "pending",
+        }
+      );
+      setSentRequests([
+        ...sentRequests,
+        { ...user, requestId: request.$id, status: "pending" },
+      ]);
     } catch (error) {
-      console.error('Error sending friend request:', error);
+      console.error("Error sending friend request:", error);
     }
   };
 
   const handleRemoveUser = async (request) => {
     try {
       // Delete the friend request document
-      await databases.deleteDocument('66797b11000ca7e40dcc', '66acd4470023494c7bf4', request.requestId);
-      setSentRequests(sentRequests.filter((sentRequest) => sentRequest.requestId !== request.requestId));
+      await databases.deleteDocument(
+        "66797b11000ca7e40dcc",
+        "66acd4470023494c7bf4",
+        request.requestId
+      );
+      setSentRequests(
+        sentRequests.filter(
+          (sentRequest) => sentRequest.requestId !== request.requestId
+        )
+      );
     } catch (error) {
-      console.error('Error removing friend request:', error);
+      console.error("Error removing friend request:", error);
     }
   };
 
   const fetchRequestsStatus = async () => {
     try {
-      const response = await databases.listDocuments('66797b11000ca7e40dcc', '66acd4470023494c7bf4', [
-        Query.equal('status', 'accepted')
-      ]);
+      const response = await databases.listDocuments(
+        "66797b11000ca7e40dcc",
+        "66acd4470023494c7bf4",
+        [Query.equal("status", "accepted")]
+      );
       const acceptedRequests = response.documents;
       setAddedUsers(acceptedRequests.map((req) => req.userId));
     } catch (error) {
-      console.error('Error fetching request status:', error);
+      console.error("Error fetching request status:", error);
     }
   };
 
   // Debounced search function
-  const debouncedSearchUsers = useRef(debounce((query) => searchUsers(query), 300)).current;
+  const debouncedSearchUsers = useRef(
+    debounce((query) => searchUsers(query), 300)
+  ).current;
 
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -145,7 +204,7 @@ const Friends = () => {
 
   const closeRequestsModal = () => {
     Animated.timing(bottomSlideAnim, {
-      toValue: Dimensions.get('window').height,
+      toValue: Dimensions.get("window").height,
       duration: 500,
       easing: Easing.in(Easing.exp),
       useNativeDriver: false,
@@ -165,7 +224,9 @@ const Friends = () => {
           <View style={styles.scoreboard}>
             <Text style={styles.title}>SCOREBOARD 🏆</Text>
             {friends.length === 0 ? (
-              <Text style={styles.noFriendsText}>Wow Empty! Add friends in order to compete!</Text>
+              <Text style={styles.noFriendsText}>
+                Wow Empty! Add friends in order to compete!
+              </Text>
             ) : (
               friends.map((friend, index) => (
                 <View key={index} style={styles.score}>
@@ -182,12 +243,29 @@ const Friends = () => {
             <Text style={styles.title}>WAKEUP TRACKER</Text>
             {friends.map((friend, index) => (
               <View key={index} style={styles.track}>
-                <Image style={styles.avatar} source={friend.avatar || images.woman} />
+                <Image
+                  style={styles.avatar}
+                  source={friend.avatar || images.woman}
+                />
                 <View style={styles.trackText}>
                   <Text style={styles.name}>{friend.name}</Text>
-                  <Text style={styles.wakeUpTime}>Wake-up Time: {friend.wakeUpTime}</Text>
+                  <Text style={styles.wakeUpTime}>
+                    Wake-up Time: {friend.wakeUpTime}
+                  </Text>
                 </View>
-                <TouchableOpacity style={[styles.statusButton, { backgroundColor: friend.status === 'Awake' ? 'green' : friend.status === 'Sleeping' ? 'gray' : 'red' }]}>
+                <TouchableOpacity
+                  style={[
+                    styles.statusButton,
+                    {
+                      backgroundColor:
+                        friend.status === "Awake"
+                          ? "green"
+                          : friend.status === "Sleeping"
+                          ? "gray"
+                          : "red",
+                    },
+                  ]}
+                >
                   <Text style={styles.statusText}> {friend.status} </Text>
                 </TouchableOpacity>
               </View>
@@ -204,9 +282,17 @@ const Friends = () => {
           <TouchableWithoutFeedback onPress={closeModal}>
             <View style={styles.modalOverlay}>
               <TouchableWithoutFeedback>
-                <Animated.View style={[styles.modalContainer, { transform: [{ translateX: slideAnim }] }]}>
+                <Animated.View
+                  style={[
+                    styles.modalContainer,
+                    { transform: [{ translateX: slideAnim }] },
+                  ]}
+                >
                   <View style={styles.modalView}>
-                    <TouchableOpacity style={styles.backButton} onPress={closeModal}>
+                    <TouchableOpacity
+                      style={styles.backButton}
+                      onPress={closeModal}
+                    >
                       <Text style={styles.backButtonText}> Back </Text>
                     </TouchableOpacity>
                     <TextInput
@@ -220,10 +306,20 @@ const Friends = () => {
                       <View style={styles.searchResults}>
                         {searchResults.map((user, index) => (
                           <View key={index} style={styles.searchResultItem}>
-                            <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
+                            <Image
+                              style={styles.avatar}
+                              source={{ uri: user.avatar || images.woman }}
+                            />
                             <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => handleAddUser(user)}>
-                              <Image style={styles.addIcon} source={isUserAdded(user.$id) ? addedIcon : addIcon} />
+                            <TouchableOpacity
+                              onPress={() => handleAddUser(user)}
+                            >
+                              <Image
+                                style={styles.addIcon}
+                                source={
+                                  isUserAdded(user.$id) ? addedIcon : addIcon
+                                }
+                              />
                             </TouchableOpacity>
                           </View>
                         ))}
@@ -231,58 +327,98 @@ const Friends = () => {
                     )}
                     <View style={styles.tabContainer}>
                       <TouchableOpacity
-                        style={[styles.tabButton, activeTab === 'suggestions' && styles.activeTabButton]}
-                        onPress={() => setActiveTab('suggestions')}
+                        style={[
+                          styles.tabButton,
+                          activeTab === "suggestions" && styles.activeTabButton,
+                        ]}
+                        onPress={() => setActiveTab("suggestions")}
                       >
                         <Text style={styles.tabButtonText}> Suggestions </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.tabButton, activeTab === 'added' && styles.activeTabButton]}
-                        onPress={() => setActiveTab('added')}
+                        style={[
+                          styles.tabButton,
+                          activeTab === "added" && styles.activeTabButton,
+                        ]}
+                        onPress={() => setActiveTab("added")}
                       >
                         <Text style={styles.tabButtonText}> Added </Text>
                       </TouchableOpacity>
                       <TouchableOpacity
-                        style={[styles.tabButton, activeTab === 'requests' && styles.activeTabButton]}
-                        onPress={() => setActiveTab('requests')}
+                        style={[
+                          styles.tabButton,
+                          activeTab === "requests" && styles.activeTabButton,
+                        ]}
+                        onPress={() => setActiveTab("requests")}
                       >
                         <Text style={styles.tabButtonText}> Requests </Text>
                       </TouchableOpacity>
                     </View>
-                    {activeTab === 'suggestions' && (
+                    {activeTab === "suggestions" && (
                       <View style={styles.suggestionsContainer}>
                         {suggestions.map((user, index) => (
                           <View key={index} style={styles.suggestionItem}>
-                            <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
+                            <Image
+                              style={styles.avatar}
+                              source={{ uri: user.avatar || images.woman }}
+                            />
                             <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => handleAddUser(user)}>
-                              <Image style={styles.addIcon} source={isUserAdded(user.$id) ? addedIcon : addIcon} />
+                            <TouchableOpacity
+                              onPress={() => handleAddUser(user)}
+                            >
+                              <Image
+                                style={styles.addIcon}
+                                source={
+                                  isUserAdded(user.$id) ? addedIcon : addIcon
+                                }
+                              />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => setSuggestions(suggestions.filter((suggestion) => suggestion.$id !== user.$id))}>
-                              <Image style={styles.removeIcon} source={removeIcon} />
+                            <TouchableOpacity
+                              onPress={() =>
+                                setSuggestions(
+                                  suggestions.filter(
+                                    (suggestion) => suggestion.$id !== user.$id
+                                  )
+                                )
+                              }
+                            >
+                              <Image
+                                style={styles.removeIcon}
+                                source={removeIcon}
+                              />
                             </TouchableOpacity>
                           </View>
                         ))}
                       </View>
                     )}
-                    {activeTab === 'added' && (
+                    {activeTab === "added" && (
                       <View style={styles.addedContainer}>
-                        <Text style={styles.addedTitle}>MY FRIENDS ({addedUsers.length})</Text>
+                        <Text style={styles.addedTitle}>
+                          MY FRIENDS ({addedUsers.length})
+                        </Text>
                         {addedUsers.map((user, index) => (
                           <View key={index} style={styles.addedItem}>
-                            <Image style={styles.avatar} source={{ uri: user.avatar || images.woman }} />
+                            <Image
+                              style={styles.avatar}
+                              source={{ uri: user.avatar || images.woman }}
+                            />
                             <Text style={styles.name}>{user.username}</Text>
-                            <TouchableOpacity onPress={() => handleRemoveUser(user)}>
-                              <Image style={styles.removeIcon} source={removeIcon} />
+                            <TouchableOpacity
+                              onPress={() => handleRemoveUser(user)}
+                            >
+                              <Image
+                                style={styles.removeIcon}
+                                source={removeIcon}
+                              />
                             </TouchableOpacity>
                           </View>
                         ))}
                       </View>
                     )}
-                    {activeTab === 'requests' && (
+                    {activeTab === "requests" && (
                       <View style={styles.requestsContainer}>
                         <TouchableOpacity onPress={openRequestsModal}>
-                          <Text style={styles.sentRequestsButton}>Sent ></Text>
+                          <Text style={styles.sentRequestsButton}>Sent</Text>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -302,15 +438,28 @@ const Friends = () => {
           <TouchableWithoutFeedback onPress={closeRequestsModal}>
             <View style={styles.modalOverlay}>
               <TouchableWithoutFeedback>
-                <Animated.View style={[styles.requestsModalContainer, { transform: [{ translateY: bottomSlideAnim }] }]}>
+                <Animated.View
+                  style={[
+                    styles.requestsModalContainer,
+                    { transform: [{ translateY: bottomSlideAnim }] },
+                  ]}
+                >
                   <View style={styles.requestsModalView}>
                     <Text style={styles.requestsTitle}>Sent Requests</Text>
                     {sentRequests.map((request, index) => (
                       <View key={index} style={styles.requestItem}>
-                        <Image style={styles.avatar} source={{ uri: request.avatar || images.woman }} />
+                        <Image
+                          style={styles.avatar}
+                          source={{ uri: request.avatar || images.woman }}
+                        />
                         <Text style={styles.name}>{request.username}</Text>
-                        <TouchableOpacity onPress={() => handleRemoveUser(request)}>
-                          <Image style={styles.removeIcon} source={removeIcon} />
+                        <TouchableOpacity
+                          onPress={() => handleRemoveUser(request)}
+                        >
+                          <Image
+                            style={styles.removeIcon}
+                            source={removeIcon}
+                          />
                         </TouchableOpacity>
                       </View>
                     ))}
@@ -329,18 +478,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#181A20',
+    backgroundColor: "#181A20",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   headerTitle: {
-    color: 'white',
+    color: "white",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   addFriendIcon: {
     width: 21,
@@ -354,21 +503,21 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    color: 'white',
+    color: "white",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   score: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   rank: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
     width: 40,
-    textAlign: 'center',
+    textAlign: "center",
   },
   avatar: {
     width: 40,
@@ -377,24 +526,24 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   name: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
     flex: 1,
   },
   points: {
-    color: 'gold',
+    color: "gold",
     fontSize: 18,
     width: 60,
-    textAlign: 'right',
+    textAlign: "right",
   },
   noFriendsText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 10,
   },
   highlight: {
-    backgroundColor: '#444',
+    backgroundColor: "#444",
     padding: 10,
     borderRadius: 10,
   },
@@ -402,15 +551,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   track: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   trackText: {
     flex: 1,
   },
   wakeUpTime: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
     marginTop: 2,
   },
@@ -419,55 +568,55 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 15,
     minWidth: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginHorizontal: 5,
   },
   statusText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     numberOfLines: 1,
     adjustsFontSizeToFit: true,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContainer: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#181A20',
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#181A20",
   },
   modalView: {
     flex: 1,
     padding: 20,
   },
   backButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: 10,
   },
   backButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
   },
   searchInput: {
-    width: '100%',
+    width: "100%",
     padding: 10,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 10,
-    color: 'white',
-    backgroundColor: '#333',
+    color: "white",
+    backgroundColor: "#333",
   },
   searchResults: {
     marginBottom: 10,
   },
   searchResultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   addIcon: {
@@ -476,45 +625,45 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 20,
   },
   tabButton: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     padding: 10,
-    backgroundColor: '#333',
+    backgroundColor: "#333",
     borderRadius: 15,
     marginHorizontal: 5,
   },
   activeTabButton: {
-    backgroundColor: '#555',
+    backgroundColor: "#555",
   },
   tabButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
   },
   suggestionsContainer: {
     marginBottom: 10,
   },
   suggestionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   addedContainer: {
     marginBottom: 10,
   },
   addedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   addedTitle: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   addedIcon: {
@@ -531,33 +680,33 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sentRequestsButton: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     padding: 10,
-    backgroundColor: '#333',
+    backgroundColor: "#333",
     borderRadius: 15,
   },
   requestsModalContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
-    width: '100%',
-    height: '80%',
-    backgroundColor: '#181A20',
+    width: "100%",
+    height: "80%",
+    backgroundColor: "#181A20",
     padding: 20,
   },
   requestsModalView: {
     flex: 1,
   },
   requestsTitle: {
-    color: 'white',
+    color: "white",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
   },
   requestItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
 });
