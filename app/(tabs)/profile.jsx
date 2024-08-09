@@ -47,6 +47,7 @@ const Profile = () => {
       console.error("Error updating username:", error);
     }
   };
+
   const updateEmail = async () => {
     try {
       const response = await account.updateEmail(email, password); // Include 'password' as the second parameter
@@ -64,18 +65,43 @@ const Profile = () => {
       console.error("Error updating password:", error);
     }
   };
-  const validateAndSavePassword = async () => {
-    if (password === reenterp) {
-      await account.updatePassword();
-    } else {
-      alert("Passwords do not match");
+
+  const handleSaveUsername = async () => {
+    try {
+      if (username !== currentUser.username) {
+        await updateUsername();
+        alert("Username updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating username:", error);
+      alert("An error occurred while updating the username. Please try again.");
     }
   };
+
   const handleSave = async () => {
-    await updateUsername();
-    await updateEmail();
-    await validateAndSavePassword();
-    alert("Profile saved successfully!");
+    try {
+      if (username !== currentUser.username) {
+        await handleSaveUsername();
+      }
+      if (email !== currentUser.email) {
+        await updateEmail();
+        await account.createSession(email, password);
+      }
+      if (password !== "" && password === reenterp) {
+        await updatePassword();
+      }
+
+      alert("Profile saved successfully!");
+    } catch (error) {
+      console.error("Error during profile update:", error);
+      if (error.message.includes("Invalid credentials")) {
+        alert(
+          "Invalid credentials. Please check the email and password you entered."
+        );
+      } else {
+        alert("An error occurred. Please try again.");
+      }
+    }
   };
 
   useEffect(() => {
