@@ -6,22 +6,25 @@ import {
   StyleSheet,
   TouchableOpacity,
   ImageBackground,
-  Alert,
+  Animated,
+  Dimensions,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars";
 import { useGlobalContext } from "../../context/GlobalProvider";
-import { getCurrentUser, getUserData } from "../../lib/appwrite";
+import { getCurrentUser } from "../../lib/appwrite";
 import images from "../../constants/images";
 import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
+
+const { width } = Dimensions.get("window");
 
 const Profile = () => {
-  const { isLoggedIn, user, isLoading } = useGlobalContext();
+  const { isLoggedIn, isLoading } = useGlobalContext();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [currentDate, setCurrentDate] = useState("");
-  const [profileImage, setProfileImage] = useState(images.woman); // Default profile image
+  const [editVisible, setEditVisible] = useState(false);
+  const slideAnim = useState(new Animated.Value(width))[0];
 
   useEffect(() => {
     if (!isLoading) {
@@ -46,40 +49,13 @@ const Profile = () => {
     }
   }, [isLoading, isLoggedIn]);
 
-  const handleImagePicker = async () => {
-    try {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        alert("Sorry, we need camera roll permissions to make this work!");
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
-
-      console.log("ImagePicker result:", result); // Debugging line to see the entire result object
-
-      if (!result.canceled) {
-        if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
-          const imageUri = result.assets[0].uri;
-          console.log("Selected image URI:", imageUri); // Debugging line to check the uri
-          setProfileImage({ uri: imageUri });
-        } else {
-          console.error("Image URI is missing in the result");
-          Alert.alert("Error", "Image URI is missing in the result");
-        }
-      } else {
-        console.log("Image picker was canceled");
-      }
-    } catch (error) {
-      console.error("Error during image picking:", error);
-      Alert.alert("Error", "Something went wrong during image picking");
-    }
+  const toggleEditProfile = () => {
+    setEditVisible(!editVisible);
+    Animated.timing(slideAnim, {
+      toValue: editVisible ? width : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
   if (isLoading) {
@@ -99,33 +75,30 @@ const Profile = () => {
         <Text style={styles.profileTitle}>{username}</Text>
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
-            <Image source={profileImage} style={styles.avatar} />
-            <TouchableOpacity
-              style={styles.cameraIcon}
-              onPress={handleImagePicker}
-            >
+            <Image source={images.woman} style={styles.avatar} />
+            <TouchableOpacity style={styles.cameraIcon}>
               <FontAwesome name="camera" size={24} color="black" />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.editIcon}>
+          <TouchableOpacity style={styles.editIcon} onPress={toggleEditProfile}>
             <FontAwesome name="edit" size={24} color="white" />
           </TouchableOpacity>
         </View>
         <View style={styles.statsContainer}>
           <View style={styles.statLeft}>
-            <Text style={styles.statTitle}>CREDIT </Text>
+            <Text style={styles.statTitle}>CREDIT</Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>0</Text>
             </View>
           </View>
           <View style={styles.statCenter}>
-            <Text style={styles.statTitle}>CHECKPOINT </Text>
+            <Text style={styles.statTitle}>CHECKPOINT</Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>0</Text>
             </View>
           </View>
           <View style={styles.statRight}>
-            <Text style={styles.statTitle}>SCORE </Text>
+            <Text style={styles.statTitle}>SCORE</Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>0</Text>
             </View>
@@ -163,6 +136,18 @@ const Profile = () => {
           }}
         />
       </View>
+
+      {/* Edit Profile Slide-in */}
+      {editVisible && (
+        <Animated.View
+          style={[
+            styles.editProfileContainer,
+            { transform: [{ translateX: slideAnim }] },
+          ]}
+        >
+          <Text style={styles.editProfileHeader}>Edit Profile</Text>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -267,6 +252,21 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
+  },
+  editProfileContainer: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#161622",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  editProfileHeader: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "bold",
   },
 });
 
