@@ -29,6 +29,9 @@ const { width } = Dimensions.get("window");
 const Profile = () => {
   const { isLoggedIn, isLoading } = useGlobalContext();
   const router = useRouter();
+  const [newEmail, setNewEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [username, setUsername] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [editVisible, setEditVisible] = useState(false);
@@ -287,6 +290,35 @@ const Profile = () => {
                         onChangeText={setUsername}
                       />
                     </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>New Email</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={newEmail}
+                        onChangeText={setNewEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Current Password</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={currentPassword}
+                        onChangeText={setCurrentPassword}
+                        secureTextEntry={true}
+                      />
+                    </View>
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>New Password</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        secureTextEntry={true}
+                      />
+                    </View>
+
                     <TouchableOpacity
                       style={styles.saveButton}
                       onPress={handleSave}
