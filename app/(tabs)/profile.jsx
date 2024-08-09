@@ -8,6 +8,7 @@ import {
   ImageBackground,
   Animated,
   Dimensions,
+  TextInput, // <- Import TextInput
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars";
@@ -21,6 +22,9 @@ const { width } = Dimensions.get("window");
 const Profile = () => {
   const { isLoggedIn, isLoading } = useGlobalContext();
   const router = useRouter();
+  const [reenterp, setReEnterP] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [editVisible, setEditVisible] = useState(false);
@@ -53,6 +57,15 @@ const Profile = () => {
     setEditVisible(!editVisible);
     Animated.timing(slideAnim, {
       toValue: editVisible ? width : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeEditProfile = () => {
+    setEditVisible(false);
+    Animated.timing(slideAnim, {
+      toValue: width,
       duration: 300,
       useNativeDriver: true,
     }).start();
@@ -145,7 +158,47 @@ const Profile = () => {
             { transform: [{ translateX: slideAnim }] },
           ]}
         >
-          <Text style={styles.editProfileHeader}>Edit Profile</Text>
+          <View style={styles.editProfileHeaderContainer}>
+            <Text style={styles.editProfileHeader}>Edit Profile</Text>
+            <TouchableOpacity
+              onPress={closeEditProfile}
+              style={styles.backButton}
+            >
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Username</Text>
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Re-enter Password</Text>
+            <TextInput
+              style={styles.input}
+              value={reenterp}
+              onChangeText={setReEnterP}
+            />
+          </View>
         </Animated.View>
       )}
     </View>
@@ -260,13 +313,42 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     backgroundColor: "#161622",
-    justifyContent: "center",
+    paddingTop: 40, // <- Add padding at the top
+  },
+  editProfileHeaderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
     alignItems: "center",
   },
   editProfileHeader: {
     color: "white",
     fontSize: 24,
     fontWeight: "bold",
+  },
+  backButton: {
+    padding: 10,
+  },
+  backButtonText: {
+    color: "white",
+    fontSize: 16,
+  },
+  inputContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    width: "100%",
+  },
+  inputLabel: {
+    color: "white",
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  input: {
+    backgroundColor: "#2F2F6B",
+    color: "white",
+    padding: 10,
+    borderRadius: 8,
+    fontSize: 16,
   },
 });
 
