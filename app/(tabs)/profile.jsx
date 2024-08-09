@@ -1,24 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ImageBackground, Alert } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { Calendar } from 'react-native-calendars';
-import { useGlobalContext } from '../../context/GlobalProvider';
-import { getCurrentUser, getUserData } from '../../lib/appwrite';
-import images from '../../constants/images';
-import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  ImageBackground,
+  Alert,
+} from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
+import { Calendar } from "react-native-calendars";
+import { useGlobalContext } from "../../context/GlobalProvider";
+import { getCurrentUser, getUserData } from "../../lib/appwrite";
+import images from "../../constants/images";
+import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 
 const Profile = () => {
   const { isLoggedIn, user, isLoading } = useGlobalContext();
   const router = useRouter();
-  const [username, setUsername] = useState('');
-  const [currentDate, setCurrentDate] = useState('');
+  const [username, setUsername] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
   const [profileImage, setProfileImage] = useState(images.woman); // Default profile image
 
   useEffect(() => {
     if (!isLoading) {
       if (!isLoggedIn) {
-        router.replace('/log-in');
+        router.replace("/log-in");
       } else {
         const fetchUserData = async () => {
           try {
@@ -32,7 +40,7 @@ const Profile = () => {
         fetchUserData();
 
         const date = new Date();
-        const formattedDate = date.toISOString().split('T')[0];
+        const formattedDate = date.toISOString().split("T")[0];
         setCurrentDate(formattedDate);
       }
     }
@@ -40,9 +48,10 @@ const Profile = () => {
 
   const handleImagePicker = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!');
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        alert("Sorry, we need camera roll permissions to make this work!");
         return;
       }
 
@@ -53,38 +62,48 @@ const Profile = () => {
         quality: 1,
       });
 
-      console.log('ImagePicker result:', result); // Debugging line to see the entire result object
+      console.log("ImagePicker result:", result); // Debugging line to see the entire result object
 
       if (!result.canceled) {
         if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
           const imageUri = result.assets[0].uri;
-          console.log('Selected image URI:', imageUri); // Debugging line to check the uri
+          console.log("Selected image URI:", imageUri); // Debugging line to check the uri
           setProfileImage({ uri: imageUri });
         } else {
-          console.error('Image URI is missing in the result');
-          Alert.alert('Error', 'Image URI is missing in the result');
+          console.error("Image URI is missing in the result");
+          Alert.alert("Error", "Image URI is missing in the result");
         }
       } else {
-        console.log('Image picker was canceled');
+        console.log("Image picker was canceled");
       }
     } catch (error) {
-      console.error('Error during image picking:', error);
-      Alert.alert('Error', 'Something went wrong during image picking');
+      console.error("Error during image picking:", error);
+      Alert.alert("Error", "Something went wrong during image picking");
     }
   };
 
   if (isLoading) {
-    return <View><Text>Loading...</Text></View>;
+    return (
+      <View>
+        <Text>Loading...</Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      <ImageBackground source={images.profileheader} style={styles.headerBackground}>
+      <ImageBackground
+        source={images.profileheader}
+        style={styles.headerBackground}
+      >
         <Text style={styles.profileTitle}>{username}</Text>
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
             <Image source={profileImage} style={styles.avatar} />
-            <TouchableOpacity style={styles.cameraIcon} onPress={handleImagePicker}>
+            <TouchableOpacity
+              style={styles.cameraIcon}
+              onPress={handleImagePicker}
+            >
               <FontAwesome name="camera" size={24} color="black" />
             </TouchableOpacity>
           </View>
@@ -106,7 +125,7 @@ const Profile = () => {
             </View>
           </View>
           <View style={styles.statRight}>
-            <Text style={styles.statTitle}>SCORE </ Text>
+            <Text style={styles.statTitle}>SCORE </Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>0</Text>
             </View>
@@ -120,21 +139,25 @@ const Profile = () => {
           style={styles.calendar}
           current={currentDate}
           markedDates={{
-            [currentDate]: { selected: true, marked: true, selectedColor: 'orange' },
+            [currentDate]: {
+              selected: true,
+              marked: true,
+              selectedColor: "orange",
+            },
           }}
           theme={{
-            calendarBackground: '#41419F',
-            textSectionTitleColor: 'white',
-            dayTextColor: 'white',
-            todayTextColor: 'orange',
-            selectedDayTextColor: 'white',
-            monthTextColor: 'white',
-            arrowColor: 'white',
-            'stylesheet.calendar.header': {
+            calendarBackground: "#41419F",
+            textSectionTitleColor: "white",
+            dayTextColor: "white",
+            todayTextColor: "orange",
+            selectedDayTextColor: "white",
+            monthTextColor: "white",
+            arrowColor: "white",
+            "stylesheet.calendar.header": {
               week: {
                 marginTop: 5,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
+                flexDirection: "row",
+                justifyContent: "space-between",
               },
             },
           }}
@@ -147,32 +170,32 @@ const Profile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#161622',
+    backgroundColor: "#161622",
     padding: 0,
   },
   headerBackground: {
-    width: '100%',
+    width: "100%",
     padding: 0,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 0,
   },
   profileTitle: {
-    color: 'white',
+    color: "white",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 40,
   },
   profileContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 20,
   },
   avatarContainer: {
-    position: 'relative',
-    alignItems: 'center',
+    position: "relative",
+    alignItems: "center",
   },
   avatar: {
     width: 80,
@@ -180,65 +203,65 @@ const styles = StyleSheet.create({
     borderRadius: 40,
   },
   cameraIcon: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 5,
   },
   editIcon: {
-    position: 'absolute',
+    position: "absolute",
     top: -20,
     right: -150,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     padding: 5,
   },
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 20,
-    width: '100%',
+    width: "100%",
   },
   statLeft: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
     marginLeft: 20,
   },
   statCenter: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   statRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginRight: 20,
   },
   statTitle: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
   },
   statValue: {
-    color: 'white',
+    color: "white",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   statValueContainer: {
-    backgroundColor: '#2F2F6B',
+    backgroundColor: "#2F2F6B",
     borderRadius: 10,
     paddingHorizontal: 15,
     paddingVertical: 5,
     marginTop: 5,
-    borderColor: 'white',
+    borderColor: "white",
     borderWidth: 1,
   },
   historyTitle: {
-    color: 'white',
+    color: "white",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 15,
-    textAlign: 'left',
+    textAlign: "left",
   },
   calendar: {
-    backgroundColor: '#41419F',
+    backgroundColor: "#41419F",
     borderRadius: 10,
     padding: 10,
   },

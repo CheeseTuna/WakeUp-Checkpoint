@@ -15,7 +15,7 @@ const ScheduleAlarm = ({ date = new Date(), showTimePicker = false }) => {
       content: {
         title: 'Alarm!',
         body: 'Your alarm is going off!',
-        sound: 'default', // Ensure sound is enabled
+        sound: 'default', 
       },
       trigger: {
         date: trigger,
