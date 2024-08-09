@@ -85,6 +85,51 @@ const Profile = () => {
 
       await account.updateName(username);
 
+      if (newEmail) {
+        try {
+          await account.updateEmail(newEmail, currentPassword);
+          console.log("Email updated successfully");
+        } catch (error) {
+          if (error.message.includes("already exists")) {
+            const uniqueEmail = `${newEmail.split("@")[0]}-${Date.now()}@${
+              newEmail.split("@")[1]
+            }`;
+            try {
+              await account.updateEmail(uniqueEmail, currentPassword);
+              console.log("Email updated with unique identifier:", uniqueEmail);
+            } catch (error) {
+              console.error(
+                "Error updating email with unique identifier:",
+                error
+              );
+              alert(
+                "An error occurred while updating email with a unique identifier."
+              );
+              return;
+            }
+          } else {
+            console.error("Error updating email:", error);
+            alert(
+              "Error updating email. Please ensure the current password is correct."
+            );
+            return;
+          }
+        }
+      }
+
+      if (newPassword) {
+        try {
+          await account.updatePassword(newPassword, currentPassword);
+          console.log("Password updated successfully");
+        } catch (error) {
+          console.error("Error updating password:", error);
+          alert(
+            "Error updating password. Please ensure the current password is correct."
+          );
+          return;
+        }
+      }
+
       await account.updatePrefs({ profileImageId });
 
       alert("Profile saved successfully!");
