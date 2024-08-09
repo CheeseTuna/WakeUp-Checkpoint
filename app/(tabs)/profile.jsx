@@ -98,6 +98,11 @@ const Profile = () => {
     }
   };
 
+  const handleSave = () => {
+    // Logic for saving the profile details goes here
+    alert("Profile saved successfully!");
+  };
+
   if (isLoading) {
     return (
       <View>
@@ -126,19 +131,19 @@ const Profile = () => {
         </View>
         <View style={styles.statsContainer}>
           <View style={styles.statLeft}>
-            <Text style={styles.statTitle}>CREDIT</Text>
+            <Text style={styles.statTitle}> CREDIT </Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>0</Text>
             </View>
           </View>
           <View style={styles.statCenter}>
-            <Text style={styles.statTitle}>CHECKPOINT</Text>
+            <Text style={styles.statTitle}> CHECKPOINT </Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>0</Text>
             </View>
           </View>
           <View style={styles.statRight}>
-            <Text style={styles.statTitle}>SCORE</Text>
+            <Text style={styles.statTitle}> SCORE </Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>0</Text>
             </View>
@@ -146,7 +151,7 @@ const Profile = () => {
         </View>
       </ImageBackground>
       <View style={styles.contentContainer}>
-        <Text style={styles.historyTitle}>WAKEUP HISTORY</Text>
+        <Text style={styles.historyTitle}> WAKEUP HISTORY </Text>
         <View style={styles.calendarContainer}></View>
         <Calendar
           style={styles.calendar}
@@ -190,7 +195,7 @@ const Profile = () => {
               <Animated.View
                 style={[
                   styles.editProfileContainer,
-                  { transform: [{ translateX: slideAnim }] }, // Slide horizontally
+                  { transform: [{ translateX: slideAnim }] },
                 ]}
               >
                 <KeyboardAvoidingView
@@ -207,7 +212,7 @@ const Profile = () => {
                         onPress={closeEditProfile}
                         style={styles.backButton}
                       >
-                        <Text style={styles.backButtonText}>Back</Text>
+                        <Text style={styles.backButtonText}> Back </Text>
                       </TouchableOpacity>
                     </View>
                     <View style={styles.inputContainer}>
@@ -244,6 +249,12 @@ const Profile = () => {
                         secureTextEntry
                       />
                     </View>
+                    <TouchableOpacity
+                      style={styles.saveButton}
+                      onPress={handleSave}
+                    >
+                      <Text style={styles.saveButtonText}> Save </Text>
+                    </TouchableOpacity>
                   </ScrollView>
                 </KeyboardAvoidingView>
               </Animated.View>
@@ -358,11 +369,11 @@ const styles = StyleSheet.create({
   },
   editProfileContainer: {
     width: "100%",
-    height: "100%", // Ensure it covers the full height
+    height: "100%",
     backgroundColor: "#161622",
-    zIndex: 10, // Ensure it is above other components
-    borderTopLeftRadius: 20, // Optional, for rounded corners
-    borderTopRightRadius: 20, // Optional, for rounded corners
+    zIndex: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingTop: 20,
     position: "absolute",
     top: 0,
@@ -408,8 +419,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
   },
+  saveButton: {
+    backgroundColor: "green",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 20,
+    marginTop: 30,
+    alignSelf: "center",
+  },
+  saveButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
   scrollViewContent: {
     flexGrow: 1,
+    paddingBottom: 40,
   },
 });
 
