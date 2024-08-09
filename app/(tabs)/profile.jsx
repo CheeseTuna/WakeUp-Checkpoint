@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { account } from "../services/appwrite";
+import { account, storage } from "../services/appwrite";
 import {
   View,
   Text,
@@ -15,92 +15,88 @@ import {
   Platform,
   Modal,
   TouchableWithoutFeedback,
+  Alert,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
 import { useGlobalContext } from "../../context/GlobalProvider";
-import { getCurrentUser } from "../../lib/appwrite";
 import images from "../../constants/images";
 import { useRouter } from "expo-router";
-console.log("Account object: ", account);
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 const Profile = () => {
   const { isLoggedIn, isLoading } = useGlobalContext();
   const router = useRouter();
-  const [reenterp, setReEnterP] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [editVisible, setEditVisible] = useState(false);
   const [profileImage, setProfileImage] = useState(images.woman);
+  const [user, setUser] = useState(null);
   const slideAnim = useRef(new Animated.Value(width)).current;
 
-  const updateUsername = async () => {
+  const saveProfileImage = async (imageUri) => {
     try {
-      const response = await account.updateName(username);
-      console.log("Username updated:", response);
-    } catch (error) {
-      console.error("Error updating username:", error);
-    }
-  };
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
 
-  const updateEmail = async () => {
-    try {
-      const response = await account.updateEmail(email, password); // Include 'password' as the second parameter
-      console.log("Email updated:", response);
-    } catch (error) {
-      console.error("Error updating email:", error);
-    }
-  };
+      const uniqueFilename = `profile-${username}-${Date.now()}.jpg`;
 
-  const updatePassword = async () => {
-    try {
-      const response = await account.updatePassword(password);
-      console.log("Password updated:", response);
-    } catch (error) {
-      console.error("Error updating password:", error);
-    }
-  };
+      const file = new File([blob], uniqueFilename, {
+        type: "image/jpeg",
+      });
 
-  const handleSaveUsername = async () => {
-    try {
-      if (username !== currentUser.username) {
-        await updateUsername();
-        alert("Username updated successfully!");
-      }
+      const storageResponse = await storage.createFile(
+        "66b62f010036f5882ce3",
+        file
+      );
+      console.log("New image uploaded:", storageResponse);
+
+      return storageResponse.$id;
     } catch (error) {
-      console.error("Error updating username:", error);
-      alert("An error occurred while updating the username. Please try again.");
+      console.error("Error uploading profile image:", error);
+      alert("Error uploading profile image. Please try again.");
+      return null;
     }
   };
 
   const handleSave = async () => {
     try {
-      if (username !== currentUser.username) {
-        await handleSaveUsername();
+      let profileImageId = user.profileImageId;
+      if (profileImage.uri) {
+        if (profileImageId) {
+          try {
+            await storage.deleteFile("your-bucket-id", profileImageId);
+            console.log("Existing file deleted:", profileImageId);
+          } catch (error) {
+            console.warn(
+              "Error deleting existing file, but continuing with upload:",
+              error
+            );
+          }
+        }
+
+        profileImageId = await saveProfileImage(profileImage.uri);
       }
-      if (email !== currentUser.email) {
-        await updateEmail();
-        await account.createSession(email, password);
-      }
-      if (password !== "" && password === reenterp) {
-        await updatePassword();
-      }
+
+      await account.updateName(username);
+
+      await account.updatePrefs({ profileImageId });
 
       alert("Profile saved successfully!");
     } catch (error) {
       console.error("Error during profile update:", error);
-      if (error.message.includes("Invalid credentials")) {
-        alert(
-          "Invalid credentials. Please check the email and password you entered."
-        );
-      } else {
-        alert("An error occurred. Please try again.");
-      }
+      alert("An error occurred. Please try again.");
+    }
+  };
+
+  const loadProfileImage = async (imageId) => {
+    try {
+      const imageUrl = storage.getFilePreview("66b62f010036f5882ce3", imageId);
+      setProfileImage({ uri: imageUrl.href });
+    } catch (error) {
+      console.error("Error loading profile image:", error);
     }
   };
 
@@ -111,8 +107,13 @@ const Profile = () => {
       } else {
         const fetchUserData = async () => {
           try {
-            const userData = await getCurrentUser();
-            setUsername(userData.username);
+            const userData = await account.get();
+            setUser(userData);
+            setUsername(userData.name);
+
+            if (userData.profileImageId) {
+              await loadProfileImage(userData.profileImageId);
+            }
           } catch (error) {
             console.error(error);
           }
@@ -126,23 +127,6 @@ const Profile = () => {
       }
     }
   }, [isLoading, isLoggedIn]);
-
-  const toggleEditProfile = () => {
-    setEditVisible(!editVisible);
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeEditProfile = () => {
-    Animated.timing(slideAnim, {
-      toValue: width, // Slide out to the right
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => setEditVisible(false));
-  };
 
   const pickImage = async () => {
     const permissionResult =
@@ -160,9 +144,27 @@ const Profile = () => {
       quality: 1,
     });
 
-    if (!result.canceled) {
-      setProfileImage({ uri: result.uri });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setProfileImage({ uri: result.assets[0].uri });
+      console.log("Selected image URI:", result.assets[0].uri);
     }
+  };
+
+  const toggleEditProfile = () => {
+    setEditVisible(!editVisible);
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeEditProfile = () => {
+    Animated.timing(slideAnim, {
+      toValue: width,
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => setEditVisible(false));
   };
 
   if (isLoading) {
@@ -283,32 +285,6 @@ const Profile = () => {
                         style={styles.input}
                         value={username}
                         onChangeText={setUsername}
-                      />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>Email</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={email}
-                        onChangeText={setEmail}
-                      />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>Current Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                      />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>New Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={reenterp}
-                        onChangeText={setReEnterP}
-                        secureTextEntry
                       />
                     </View>
                     <TouchableOpacity
