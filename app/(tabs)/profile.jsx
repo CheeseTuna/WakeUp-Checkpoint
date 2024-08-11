@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { account, storage } from "../services/appwrite";
 import {
+  SafeAreaView,
   View,
   Text,
   Image,
@@ -227,171 +228,191 @@ const Profile = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <ImageBackground
-        source={images.profileheader}
-        style={styles.headerBackground}
-      >
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Log Out</Text>
-        </TouchableOpacity>
-        <Text style={styles.profileTitle}>{username}</Text>
-        <View style={styles.profileContainer}>
-          <View style={styles.avatarContainer}>
-            <Image source={profileImage} style={styles.avatar} />
-            <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
-              <FontAwesome name="camera" size={24} color="black" />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <ImageBackground
+          source={images.profileheader}
+          style={styles.headerBackground}
+        >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Log Out</Text>
+          </TouchableOpacity>
+          <Text style={styles.profileTitle}>{username}</Text>
+          <View style={styles.profileContainer}>
+            <View style={styles.avatarContainer}>
+              <Image source={profileImage} style={styles.avatar} />
+              <TouchableOpacity style={styles.cameraIcon} onPress={pickImage}>
+                <FontAwesome name="camera" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.editIcon}
+              onPress={toggleEditProfile}
+            >
+              <FontAwesome name="edit" size={24} color="white" />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.editIcon} onPress={toggleEditProfile}>
-            <FontAwesome name="edit" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.statsContainer}>
-          <View style={styles.statLeft}>
-            <Text style={styles.statTitle}> CREDIT </Text>
-            <View style={styles.statValueContainer}>
-              <Text style={styles.statValue}>0</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statLeft}>
+              <Text style={styles.statTitle}> CREDIT </Text>
+              <View style={styles.statValueContainer}>
+                <Text style={styles.statValue}>0</Text>
+              </View>
+            </View>
+            <View style={styles.statCenter}>
+              <Text style={styles.statTitle}> CHECKPOINT </Text>
+              <View style={styles.statValueContainer}>
+                <Text style={styles.statValue}>0</Text>
+              </View>
+            </View>
+            <View style={styles.statRight}>
+              <Text style={styles.statTitle}> SCORE </Text>
+              <View style={styles.statValueContainer}>
+                <Text style={styles.statValue}>0</Text>
+              </View>
             </View>
           </View>
-          <View style={styles.statCenter}>
-            <Text style={styles.statTitle}> CHECKPOINT </Text>
-            <View style={styles.statValueContainer}>
-              <Text style={styles.statValue}>0</Text>
-            </View>
+        </ImageBackground>
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <View style={styles.contentContainer}>
+            <Text style={styles.historyTitle}> WAKEUP HISTORY </Text>
+            <View style={styles.calendarContainer}></View>
+            <Calendar
+              style={styles.calendar}
+              current={currentDate}
+              markedDates={{
+                [currentDate]: {
+                  selected: true,
+                  marked: true,
+                  selectedColor: "orange",
+                },
+              }}
+              theme={{
+                calendarBackground: "#41419F",
+                textSectionTitleColor: "white",
+                dayTextColor: "white",
+                todayTextColor: "orange",
+                selectedDayTextColor: "white",
+                monthTextColor: "white",
+                arrowColor: "white",
+                "stylesheet.calendar.header": {
+                  week: {
+                    marginTop: 5,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  },
+                },
+              }}
+            />
           </View>
-          <View style={styles.statRight}>
-            <Text style={styles.statTitle}> SCORE </Text>
-            <View style={styles.statValueContainer}>
-              <Text style={styles.statValue}>0</Text>
-            </View>
+          <View style={styles.statsBox}>
+            <Text style={styles.statsTextLeft}>Total wake ups this month</Text>
+            <Text style={styles.statsTextRight}>0</Text>
           </View>
-        </View>
-      </ImageBackground>
-      <View style={styles.contentContainer}>
-        <Text style={styles.historyTitle}> WAKEUP HISTORY </Text>
-        <View style={styles.calendarContainer}></View>
-        <Calendar
-          style={styles.calendar}
-          current={currentDate}
-          markedDates={{
-            [currentDate]: {
-              selected: true,
-              marked: true,
-              selectedColor: "orange",
-            },
-          }}
-          theme={{
-            calendarBackground: "#41419F",
-            textSectionTitleColor: "white",
-            dayTextColor: "white",
-            todayTextColor: "orange",
-            selectedDayTextColor: "white",
-            monthTextColor: "white",
-            arrowColor: "white",
-            "stylesheet.calendar.header": {
-              week: {
-                marginTop: 5,
-                flexDirection: "row",
-                justifyContent: "space-between",
-              },
-            },
-          }}
-        />
-      </View>
-      <View style={styles.statsBox}>
-        <Text style={styles.statsTextLeft}> Total wake ups this month </Text>
-        <Text style={styles.statsTextRight}> 0 </Text>
-      </View>
 
-      {/* Edit Profile Slide-in */}
-      <Modal
-        animationType="none"
-        transparent={true}
-        visible={editVisible}
-        onRequestClose={closeEditProfile}
-      >
-        <TouchableWithoutFeedback onPress={closeEditProfile}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <Animated.View
-                style={[
-                  styles.editProfileContainer,
-                  { transform: [{ translateX: slideAnim }] },
-                ]}
-              >
-                <KeyboardAvoidingView
-                  behavior={Platform.OS === "ios" ? "padding" : "height"}
-                  style={{ flex: 1 }}
+          <View style={[styles.statsBox, { marginTop: 10 }]}>
+            <Text style={styles.statsTextLeft}>
+              Total alarms set this month
+            </Text>
+            <Text style={styles.statsTextRight}>0</Text>
+          </View>
+        </ScrollView>
+        {/* Edit Profile Slide-in */}
+        <Modal
+          animationType="none"
+          transparent={true}
+          visible={editVisible}
+          onRequestClose={closeEditProfile}
+        >
+          <TouchableWithoutFeedback onPress={closeEditProfile}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <Animated.View
+                  style={[
+                    styles.editProfileContainer,
+                    { transform: [{ translateX: slideAnim }] },
+                  ]}
                 >
-                  <ScrollView
-                    contentContainerStyle={styles.scrollViewContent}
-                    keyboardShouldPersistTaps="handled"
+                  <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1 }}
                   >
-                    <View style={styles.editProfileHeaderContainer}>
-                      <Text style={styles.editProfileHeader}>Edit Profile</Text>
-                      <TouchableOpacity
-                        onPress={closeEditProfile}
-                        style={styles.backButton}
-                      >
-                        <Text style={styles.backButtonText}> Back </Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>Username</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={username}
-                        onChangeText={setUsername}
-                      />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>New Email</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={newEmail}
-                        onChangeText={setNewEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                      />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>Current Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={currentPassword}
-                        onChangeText={setCurrentPassword}
-                        secureTextEntry={true}
-                      />
-                    </View>
-                    <View style={styles.inputContainer}>
-                      <Text style={styles.inputLabel}>New Password</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={newPassword}
-                        onChangeText={setNewPassword}
-                        secureTextEntry={true}
-                      />
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.saveButton}
-                      onPress={handleSave}
+                    <ScrollView
+                      contentContainerStyle={styles.scrollViewContent}
+                      keyboardShouldPersistTaps="handled"
                     >
-                      <Text style={styles.saveButtonText}> Save </Text>
-                    </TouchableOpacity>
-                  </ScrollView>
-                </KeyboardAvoidingView>
-              </Animated.View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-    </View>
+                      <View style={styles.editProfileHeaderContainer}>
+                        <Text style={styles.editProfileHeader}>
+                          Edit Profile
+                        </Text>
+                        <TouchableOpacity
+                          onPress={closeEditProfile}
+                          style={styles.backButton}
+                        >
+                          <Text style={styles.backButtonText}> Back </Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Username</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={username}
+                          onChangeText={setUsername}
+                        />
+                      </View>
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>New Email</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={newEmail}
+                          onChangeText={setNewEmail}
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                        />
+                      </View>
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>Current Password</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={currentPassword}
+                          onChangeText={setCurrentPassword}
+                          secureTextEntry={true}
+                        />
+                      </View>
+                      <View style={styles.inputContainer}>
+                        <Text style={styles.inputLabel}>New Password</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                          secureTextEntry={true}
+                        />
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.saveButton}
+                        onPress={handleSave}
+                      >
+                        <Text style={styles.saveButtonText}> Save </Text>
+                      </TouchableOpacity>
+                    </ScrollView>
+                  </KeyboardAvoidingView>
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#161622",
+  },
   container: {
     flex: 1,
     backgroundColor: "#161622",
