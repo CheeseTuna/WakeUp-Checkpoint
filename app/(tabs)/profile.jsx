@@ -299,6 +299,10 @@ const Profile = () => {
           }}
         />
       </View>
+      <View style={styles.statsBox}>
+        <Text style={styles.statsTextLeft}> Total wake ups this month </Text>
+        <Text style={styles.statsTextRight}> 0 </Text>
+      </View>
 
       {/* Edit Profile Slide-in */}
       <Modal
@@ -567,6 +571,29 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   logoutButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  statsBox: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#2F2F6B",
+    padding: 10,
+    borderRadius: 15,
+    marginTop: 20,
+    borderColor: "white",
+    borderWidth: 1,
+    width: 370,
+    left: 22,
+  },
+
+  statsTextLeft: {
+    color: "white",
+    fontSize: 16,
+  },
+
+  statsTextRight: {
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
