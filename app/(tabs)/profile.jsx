@@ -39,6 +39,9 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const slideAnim = useRef(new Animated.Value(width)).current;
 
+  const handleLogout = () => {
+    router.replace("/log-in");
+  };
   const saveProfileImage = async (imageUri) => {
     try {
       const response = await fetch(imageUri);
@@ -229,6 +232,9 @@ const Profile = () => {
         source={images.profileheader}
         style={styles.headerBackground}
       >
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Log Out</Text>
+        </TouchableOpacity>
         <Text style={styles.profileTitle}>{username}</Text>
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
@@ -426,7 +432,7 @@ const styles = StyleSheet.create({
   },
   editIcon: {
     position: "absolute",
-    top: -20,
+    top: -40,
     right: -150,
     backgroundColor: "transparent",
     padding: 5,
@@ -551,6 +557,19 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
     paddingBottom: 40,
+  },
+  logoutButton: {
+    position: "absolute",
+    top: 40,
+    left: 17,
+    padding: 10,
+    backgroundColor: "#FF3B30",
+    borderRadius: 15,
+  },
+  logoutButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
