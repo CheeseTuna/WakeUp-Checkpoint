@@ -11,5 +11,6 @@ import woman from "../assets/images/woman.png";
 import pheader from "../assets/images/woman.png";
 import adam from "../assets/images/adam.png";
 import lee from "../assets/images/lee.png";
+import alarm from "../assets/images/alarm.gif";
 
-export default { profile, thumbnail, cards, path, logo, logoSmall, empty, landingscreen, header, woman, pheader, adam, lee };
+export default { profile, thumbnail, cards, path, logo, logoSmall, empty, landingscreen, header, woman, pheader, adam, lee, alarm };

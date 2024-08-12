@@ -7,13 +7,14 @@ import {
   TouchableOpacity,
   Switch,
   Button,
+  Alert,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { Picker } from "@react-native-picker/picker";
 import { Audio } from "expo-av";
 import moment from "moment";
 import { databases, account } from "../services/appwrite";
-import { Query } from "appwrite";
+import { Query, ID } from "appwrite";
 
 const Alarm = () => {
   const [alarms, setAlarms] = useState([]);
@@ -24,13 +25,14 @@ const Alarm = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedSoundDocumentId, setSelectedSoundDocumentId] = useState(
     "66b94f5900329d9d770a"
-  ); // Set default value here
+  );
   const [selectedSound, setSelectedSound] = useState("Emergency");
   const [activeDays, setActiveDays] = useState([]);
   const [sound, setSound] = useState();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSound, setCurrentSound] = useState("");
   const [playingAlarmIndex, setPlayingAlarmIndex] = useState(null);
+  const [triggeredAlarm, setTriggeredAlarm] = useState(null);
 
   const daysOfWeek = ["M", "Tu", "W", "Th", "F", "S", "Su"];
 
@@ -106,6 +108,7 @@ const Alarm = () => {
       setIsPlaying(true);
       setPlayingAlarmIndex(index);
       await newSound.playAsync();
+      setTriggeredAlarm(index);
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -114,47 +117,58 @@ const Alarm = () => {
   const addOrEditAlarm = async () => {
     const userId = await getUserId();
     if (!userId) return;
-    console.log("Current selectedSoundDocumentId:", selectedSoundDocumentId);
-    if (!selectedSoundDocumentId) {
-      console.error("soundId is undefined or null.");
-      return;
-    }
-
-    const newAlarm = {
-      time: time.toISOString(),
-      soundId: selectedSoundDocumentId,
-      active: true,
-      days: activeDays,
-      userId: userId,
-    };
 
     try {
+      let newAlarm;
+
       if (isEditing) {
         const alarmId = alarms[currentAlarm].$id;
+        console.log(`Editing alarm with ID: ${alarmId}`);
         await databases.updateDocument(
           "66797b11000ca7e40dcc",
           "66b93cdd001f6d14a27e",
           alarmId,
-          newAlarm
+          {
+            time: time.toISOString(),
+            soundId: selectedSoundDocumentId,
+            active: true,
+            days: activeDays,
+            userId: userId,
+          }
         );
+        newAlarm = {
+          ...alarms[currentAlarm],
+          time: time.toISOString(),
+          soundId: selectedSoundDocumentId,
+          active: true,
+          days: activeDays,
+        };
+        console.log(`Alarm with ID: ${alarmId} has been saved.`);
       } else {
-        await databases.createDocument(
+        const response = await databases.createDocument(
           "66797b11000ca7e40dcc",
           "66b93cdd001f6d14a27e",
-          "unique()",
-          newAlarm
+          ID.unique(),
+          {
+            time: time.toISOString(),
+            soundId: selectedSoundDocumentId,
+            active: true,
+            days: activeDays,
+            userId: userId,
+          }
         );
+        newAlarm = response;
+        console.log(`Creating a new alarm with ID: ${newAlarm.$id}`);
       }
 
-      const response = await databases.listDocuments(
+      const updatedAlarms = await databases.listDocuments(
         "66797b11000ca7e40dcc",
         "66b93cdd001f6d14a27e",
         [Query.equal("userId", userId)]
       );
-      const updatedAlarms = response.documents;
-      setAlarms(updatedAlarms);
+      setAlarms(updatedAlarms.documents);
 
-      scheduleAlarm(newAlarm, updatedAlarms.length - 1);
+      scheduleAlarm(newAlarm, updatedAlarms.documents.length - 1);
     } catch (error) {
       console.error("Failed to save alarm:", error);
     }
@@ -168,11 +182,20 @@ const Alarm = () => {
 
     try {
       const alarmId = alarms[index].$id;
+      console.log(`Deleting alarm with ID: ${alarmId}`);
+
+      if (alarmTimeouts[alarmId]) {
+        clearTimeout(alarmTimeouts[alarmId]); // Clear the timeout if the alarm is deleted
+        delete alarmTimeouts[alarmId];
+        console.log(`Cancelled scheduled alarm with ID: ${alarmId}`);
+      }
+
       await databases.deleteDocument(
         "66797b11000ca7e40dcc",
         "66b93cdd001f6d14a27e",
         alarmId
       );
+
       setAlarms(alarms.filter((_, i) => i !== index));
     } catch (error) {
       console.error("Failed to delete alarm:", error);
@@ -186,13 +209,13 @@ const Alarm = () => {
     setTime(new Date());
     setSelectedSound("Emergency");
     setActiveDays([]);
-    setSelectedSoundDocumentId("66b94f5900329d9d770a"); // Reset to default value or null if needed
+    setSelectedSoundDocumentId("66b94f5900329d9d770a");
   };
 
   const editAlarm = (index) => {
     const alarm = alarms[index];
     setTime(new Date(alarm.time));
-    setSelectedSoundDocumentId(alarm.soundId); // Correctly set the selected sound ID when editing
+    setSelectedSoundDocumentId(alarm.soundId);
     setActiveDays(alarm.days);
     setCurrentAlarm(index);
     setIsEditing(true);
@@ -204,35 +227,74 @@ const Alarm = () => {
     setTime(selectedDate || time);
   };
 
-  const toggleAlarm = (index) => {
-    setAlarms(
-      alarms.map((alarm, i) =>
-        i === index ? { ...alarm, active: !alarm.active } : alarm
-      )
-    );
+  const alarmTimeouts = {};
+
+  const toggleAlarm = async (index) => {
+    const alarm = alarms[index];
+    const updatedAlarm = {
+      time: alarm.time,
+      soundId: alarm.soundId,
+      active: !alarm.active,
+      days: alarm.days,
+      userId: alarm.userId,
+    };
+
+    try {
+      if (!alarm.$id) {
+        console.error("Missing documentId for alarm.");
+        return;
+      }
+
+      console.log(
+        `Toggling alarm with ID: ${alarm.$id}, new state: ${
+          updatedAlarm.active ? "active" : "inactive"
+        }`
+      );
+
+      await databases.updateDocument(
+        "66797b11000ca7e40dcc",
+        "66b93cdd001f6d14a27e",
+        alarm.$id,
+        updatedAlarm
+      );
+
+      console.log(
+        `Alarm with ID: ${alarm.$id} has been ${
+          updatedAlarm.active ? "activated" : "deactivated"
+        }.`
+      );
+
+      if (!updatedAlarm.active && alarmTimeouts[alarm.$id]) {
+        clearTimeout(alarmTimeouts[alarm.$id]); // Clear the timeout if the alarm is deactivated
+        delete alarmTimeouts[alarm.$id];
+        console.log(`Cancelled scheduled alarm with ID: ${alarm.$id}`);
+      }
+
+      setAlarms(
+        alarms.map((a, i) =>
+          i === index ? { ...a, active: updatedAlarm.active } : a
+        )
+      );
+
+      if (updatedAlarm.active) {
+        scheduleAlarm(updatedAlarm, index);
+      } else {
+        if (index === triggeredAlarm) {
+          stopAlarm();
+        }
+      }
+    } catch (error) {
+      console.error("Failed to toggle alarm:", error);
+    }
   };
 
-  const toggleModalDay = (day) => {
-    setActiveDays(
-      activeDays.includes(day)
-        ? activeDays.filter((d) => d !== day)
-        : [...activeDays, day]
-    );
-  };
-
-  const toggleDay = (day, index) => {
-    setAlarms(
-      alarms.map((alarm, i) =>
-        i === index
-          ? {
-              ...alarm,
-              days: alarm.days.includes(day)
-                ? alarm.days.filter((d) => d !== day)
-                : [...alarm.days, day],
-            }
-          : alarm
-      )
-    );
+  const stopAlarm = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      setIsPlaying(false);
+      setPlayingAlarmIndex(null);
+      setTriggeredAlarm(null);
+    }
   };
 
   const scheduleAlarm = async (alarm, index) => {
@@ -245,9 +307,23 @@ const Alarm = () => {
     }
 
     const timeDifference = alarmTime - currentTime;
+    console.log(
+      `Countdown for alarm with ID: ${alarm.$id} has begun. Time left: ${
+        timeDifference / 1000
+      } seconds`
+    );
 
-    setTimeout(async () => {
-      if (alarm.active) {
+    // Store the timeout ID in the alarmTimeouts object
+    alarmTimeouts[alarm.$id] = setTimeout(async () => {
+      // Additional check to confirm the alarm's active status before triggering
+      const latestAlarms = await databases.listDocuments(
+        "66797b11000ca7e40dcc",
+        "66b93cdd001f6d14a27e",
+        [Query.equal("$id", alarm.$id)]
+      );
+      const latestAlarm = latestAlarms.documents[0];
+
+      if (latestAlarm && latestAlarm.active) {
         try {
           const soundDocument = await databases.getDocument(
             "66797b11000ca7e40dcc",
@@ -256,10 +332,19 @@ const Alarm = () => {
           );
 
           const soundName = soundDocument.name;
+          console.log(
+            `Alarm with ID: ${
+              alarm.$id
+            } is triggered at ${new Date().toLocaleTimeString()}`
+          );
           playSound(soundName, index);
         } catch (error) {
           console.error("Failed to fetch sound document:", error);
         }
+      } else {
+        console.log(
+          `Alarm with ID: ${alarm.$id} was cancelled or deactivated before triggering.`
+        );
       }
     }, timeDifference);
   };
@@ -372,6 +457,11 @@ const Alarm = () => {
               />
               <Button title="Delete" onPress={() => deleteAlarm(index)} />
             </View>
+            {index === triggeredAlarm && (
+              <View style={{ marginTop: 10 }}>
+                <Button title="Turn off" onPress={stopAlarm} color="red" />
+              </View>
+            )}
           </View>
         )}
         keyExtractor={(item, index) => index.toString()}
@@ -446,12 +536,10 @@ const Alarm = () => {
                 selectedValue={selectedSoundDocumentId}
                 style={{ height: 50, width: 250 }}
                 onValueChange={(itemValue) => {
-                  console.log("Selected Sound Document ID:", itemValue); // Debugging log
                   setSelectedSoundDocumentId(itemValue);
                 }}
               >
                 <Picker.Item label="Emergency" value="66b94f5900329d9d770a" />
-                {/* <Picker.Item label="Chime" value="soundDocumentId2" /> */}
                 {/* Add more Picker.Item elements with actual document IDs */}
               </Picker>
               <View
