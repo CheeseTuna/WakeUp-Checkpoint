@@ -33,6 +33,8 @@ const Alarm = () => {
   const [currentSound, setCurrentSound] = useState("");
   const [playingAlarmIndex, setPlayingAlarmIndex] = useState(null);
   const [triggeredAlarm, setTriggeredAlarm] = useState(null);
+  const [alarmTriggerModalVisible, setAlarmTriggerModalVisible] =
+    useState(false);
 
   const daysOfWeek = ["M", "Tu", "W", "Th", "F", "S", "Su"];
 
@@ -84,6 +86,7 @@ const Alarm = () => {
         await sound.stopAsync();
         setIsPlaying(false);
         setPlayingAlarmIndex(null);
+        setAlarmTriggerModalVisible(false); // Hide the modal when the sound stops
         return;
       }
 
@@ -109,6 +112,7 @@ const Alarm = () => {
       setPlayingAlarmIndex(index);
       await newSound.playAsync();
       setTriggeredAlarm(index);
+      setAlarmTriggerModalVisible(true); // Show the alarm trigger modal when the alarm is triggered
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -294,6 +298,7 @@ const Alarm = () => {
       setIsPlaying(false);
       setPlayingAlarmIndex(null);
       setTriggeredAlarm(null);
+      setAlarmTriggerModalVisible(false); // Hide the alarm trigger modal when the alarm is stopped
     }
   };
 
@@ -483,6 +488,36 @@ const Alarm = () => {
       >
         <Text style={{ fontSize: 24, color: "white" }}>+</Text>
       </TouchableOpacity>
+      <Modal
+        animationType="slide"
+        transparent={false} // Fullscreen modal
+        visible={alarmTriggerModalVisible}
+        onRequestClose={() => {
+          setAlarmTriggerModalVisible(false);
+          stopAlarm();
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0, 0, 0, 0.9)",
+          }}
+        >
+          <Text style={{ color: "white", fontSize: 24, marginBottom: 20 }}>
+            Alarm Triggered!
+          </Text>
+          <Button
+            title="Turn off"
+            onPress={() => {
+              stopAlarm();
+              setAlarmTriggerModalVisible(false);
+            }}
+            color="red"
+          />
+        </View>
+      </Modal>
 
       {modalVisible && (
         <Modal
