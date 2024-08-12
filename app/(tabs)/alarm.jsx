@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Button,
-  Alert,
+  Image,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { Picker } from "@react-native-picker/picker";
@@ -462,11 +462,6 @@ const Alarm = () => {
               />
               <Button title="Delete" onPress={() => deleteAlarm(index)} />
             </View>
-            {index === triggeredAlarm && (
-              <View style={{ marginTop: 10 }}>
-                <Button title="Turn off" onPress={stopAlarm} color="red" />
-              </View>
-            )}
           </View>
         )}
         keyExtractor={(item, index) => index.toString()}
@@ -502,20 +497,60 @@ const Alarm = () => {
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "rgba(0, 0, 0, 0.9)",
+            backgroundColor: "black",
+            padding: 20,
           }}
         >
-          <Text style={{ color: "white", fontSize: 24, marginBottom: 20 }}>
-            Alarm Triggered!
-          </Text>
-          <Button
-            title="Turn off"
-            onPress={() => {
-              stopAlarm();
-              setAlarmTriggerModalVisible(false);
-            }}
-            color="red"
+          <Image
+            source={require("../../assets/images/alarm.gif")} // Replace with your correct path to the GIF
+            style={{ width: 350, height: 350, marginBottom: 40 }} // Adjust size as needed
+            resizeMode="contain"
           />
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "95%",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                // Functionality to snooze the alarm for 5 minutes
+                stopAlarm();
+                const snoozeTime = new Date(new Date().getTime() + 5 * 60000); // 5 minutes from now
+                const snoozedAlarm = {
+                  ...alarms[triggeredAlarm],
+                  time: snoozeTime.toISOString(),
+                };
+                scheduleAlarm(snoozedAlarm, triggeredAlarm); // Reschedule the alarm
+                setAlarmTriggerModalVisible(false);
+              }}
+              style={{
+                backgroundColor: "purple",
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderRadius: 15,
+                marginRight: 10,
+              }}
+            >
+              <Text style={{ color: "white", fontSize: 24 }}> Snooze </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                stopAlarm();
+                setAlarmTriggerModalVisible(false);
+              }}
+              style={{
+                backgroundColor: "red",
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderRadius: 15,
+              }}
+            >
+              <Text style={{ color: "white", fontSize: 24 }}> Turn off </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
