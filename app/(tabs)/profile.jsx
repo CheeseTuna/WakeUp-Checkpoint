@@ -307,13 +307,17 @@ const Profile = () => {
             />
           </View>
           <View style={styles.statsBox}>
-            <Text style={styles.statsTextLeft}>Total wake ups this month</Text>
+            <Text style={styles.statsTextLeft}>
+              {" "}
+              Total wake ups this month{" "}
+            </Text>
             <Text style={styles.statsTextRight}>0</Text>
           </View>
 
           <View style={[styles.statsBox, { marginTop: 10 }]}>
             <Text style={styles.statsTextLeft}>
-              Total alarms set this month
+              {" "}
+              Total alarms set this month{" "}
             </Text>
             <Text style={styles.statsTextRight}>0</Text>
           </View>
