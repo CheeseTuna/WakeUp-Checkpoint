@@ -76,7 +76,7 @@ const Alarm = () => {
     fetchAlarms();
   }, []);
 
-  const playSound = async (soundName, index) => {
+  const playSound = async (soundName, index, showModal = true) => {
     try {
       if (
         isPlaying &&
@@ -105,14 +105,19 @@ const Alarm = () => {
         await sound.unloadAsync();
       }
 
-      const { sound: newSound } = await Audio.Sound.createAsync(soundFile);
+      const { sound: newSound } = await Audio.Sound.createAsync(soundFile, {
+        isLooping: true, // Set the sound to loop
+      });
       setSound(newSound);
       setCurrentSound(soundName);
       setIsPlaying(true);
       setPlayingAlarmIndex(index);
       await newSound.playAsync();
-      setTriggeredAlarm(index);
-      setAlarmTriggerModalVisible(true); // Show the alarm trigger modal when the alarm is triggered
+
+      if (showModal) {
+        setTriggeredAlarm(index);
+        setAlarmTriggerModalVisible(true); // Show the alarm trigger modal only if showModal is true
+      }
     } catch (error) {
       console.error("Error playing sound:", error);
     }
@@ -439,12 +444,18 @@ const Alarm = () => {
                 <Button
                   title={
                     isPlaying &&
-                    currentSound === item.sound &&
-                    playingAlarmIndex === index
+                    currentSound === selectedSound &&
+                    playingAlarmIndex !== null
                       ? "Stop"
                       : "Play"
                   }
-                  onPress={() => playSound(item.sound, index)}
+                  onPress={() =>
+                    playSound(
+                      selectedSound,
+                      triggeredAlarm || playingAlarmIndex,
+                      false
+                    )
+                  }
                 />
               </View>
             </TouchableOpacity>
@@ -646,16 +657,6 @@ const Alarm = () => {
                   marginVertical: 10,
                 }}
               >
-                <Button
-                  title={
-                    isPlaying &&
-                    currentSound === selectedSound &&
-                    playingAlarmIndex === null
-                      ? "Stop"
-                      : "Play"
-                  }
-                  onPress={() => playSound(selectedSound, null)}
-                />
                 <Button title="Cancel" onPress={resetModal} />
                 <Button
                   title={isEditing ? "Save" : "Add"}
