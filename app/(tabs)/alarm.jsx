@@ -37,6 +37,28 @@ const Alarm = () => {
     useState(false);
 
   const daysOfWeek = ["M", "Tu", "W", "Th", "F", "S", "Su"];
+  const toggleDay = (day, index) => {
+    const updatedAlarms = alarms.map((alarm, i) => {
+      if (i === index) {
+        if (alarm.days.includes(day)) {
+          // If the day is already in the list, remove it
+          return {
+            ...alarm,
+            days: alarm.days.filter((d) => d !== day),
+          };
+        } else {
+          // Otherwise, add the day to the list
+          return {
+            ...alarm,
+            days: [...alarm.days, day],
+          };
+        }
+      }
+      return alarm;
+    });
+
+    setAlarms(updatedAlarms);
+  };
 
   useEffect(() => {
     if (sound) {
@@ -623,33 +645,6 @@ const Alarm = () => {
                 <Picker.Item label="Emergency" value="66b94f5900329d9d770a" />
                 {/* Add more Picker.Item elements with actual document IDs */}
               </Picker>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-around",
-                  marginVertical: 10,
-                }}
-              >
-                {daysOfWeek.map((day, i) => (
-                  <TouchableOpacity key={i} onPress={() => toggleModalDay(day)}>
-                    <View
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 15,
-                        backgroundColor: activeDays.includes(day)
-                          ? "orange"
-                          : "gray",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        marginHorizontal: 5,
-                      }}
-                    >
-                      <Text style={{ color: "white" }}>{day}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
               <View
                 style={{
                   flexDirection: "row",
