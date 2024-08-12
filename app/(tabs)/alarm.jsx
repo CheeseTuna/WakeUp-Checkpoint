@@ -12,39 +12,20 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { Picker } from "@react-native-picker/picker";
 import { Audio } from "expo-av";
 import moment from "moment";
-import * as BackgroundFetch from "expo-background-fetch";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { registerBackgroundTask } from "../backgroundTasks";
+import { databases, account } from "../services/appwrite";
+import { Query } from "appwrite";
 
 const Alarm = () => {
-  const initialAlarms = [
-    {
-      time: new Date().setHours(8, 0, 0, 0),
-      sound: "emergency",
-      active: false,
-      days: [],
-    },
-    {
-      time: new Date().setHours(9, 0, 0, 0),
-      sound: "emergency",
-      active: false,
-      days: [],
-    },
-    {
-      time: new Date().setHours(10, 0, 0, 0),
-      sound: "emergency",
-      active: false,
-      days: [],
-    },
-  ];
-
-  const [alarms, setAlarms] = useState(initialAlarms);
+  const [alarms, setAlarms] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAlarm, setCurrentAlarm] = useState(null);
   const [time, setTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedSound, setSelectedSound] = useState("emergency");
+  const [selectedSoundDocumentId, setSelectedSoundDocumentId] = useState(
+    "66b94f5900329d9d770a"
+  ); // Set default value here
+  const [selectedSound, setSelectedSound] = useState("Emergency");
   const [activeDays, setActiveDays] = useState([]);
   const [sound, setSound] = useState();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -54,77 +35,147 @@ const Alarm = () => {
   const daysOfWeek = ["M", "Tu", "W", "Th", "F", "S", "Su"];
 
   useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
+    if (sound) {
+      return () => {
+        sound.unloadAsync();
+      };
+    }
   }, [sound]);
 
+  const getUserId = async () => {
+    try {
+      const user = await account.get();
+      return user.$id;
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const fetchAlarms = async () => {
+      const userId = await getUserId();
+      if (!userId) return;
+
+      try {
+        const response = await databases.listDocuments(
+          "66797b11000ca7e40dcc",
+          "66b93cdd001f6d14a27e",
+          [Query.equal("userId", userId)]
+        );
+        setAlarms(response.documents);
+      } catch (error) {
+        console.error("Failed to fetch alarms:", error);
+      }
+    };
+
+    fetchAlarms();
+  }, []);
+
   const playSound = async (soundName, index) => {
-    if (
-      isPlaying &&
-      currentSound === soundName &&
-      playingAlarmIndex === index
-    ) {
-      await sound.stopAsync();
-      setIsPlaying(false);
-      setPlayingAlarmIndex(null);
-      return;
-    }
-
-    let soundFile;
-    switch (soundName) {
-      case "emergency":
-        soundFile = require("../../assets/sounds/emergency.wav");
-        break;
-      default:
+    try {
+      if (
+        isPlaying &&
+        currentSound === soundName &&
+        playingAlarmIndex === index
+      ) {
+        await sound.stopAsync();
+        setIsPlaying(false);
+        setPlayingAlarmIndex(null);
         return;
-    }
+      }
 
-    if (sound) {
-      await sound.unloadAsync();
-    }
+      let soundFile;
+      switch (soundName) {
+        case "Emergency":
+          soundFile = require("../../assets/sounds/emergency.wav");
+          break;
+        // Add more cases as needed
+        default:
+          console.error("Sound file not found for:", soundName);
+          return;
+      }
 
-    const { sound: newSound } = await Audio.Sound.createAsync(soundFile);
-    setSound(newSound);
-    setCurrentSound(soundName);
-    setIsPlaying(true);
-    setPlayingAlarmIndex(index);
-    await newSound.playAsync();
+      if (sound) {
+        await sound.unloadAsync();
+      }
+
+      const { sound: newSound } = await Audio.Sound.createAsync(soundFile);
+      setSound(newSound);
+      setCurrentSound(soundName);
+      setIsPlaying(true);
+      setPlayingAlarmIndex(index);
+      await newSound.playAsync();
+    } catch (error) {
+      console.error("Error playing sound:", error);
+    }
   };
 
   const addOrEditAlarm = async () => {
+    const userId = await getUserId();
+    if (!userId) return;
+    console.log("Current selectedSoundDocumentId:", selectedSoundDocumentId);
+    if (!selectedSoundDocumentId) {
+      console.error("soundId is undefined or null.");
+      return;
+    }
+
     const newAlarm = {
-      time,
-      sound: selectedSound,
+      time: time.toISOString(),
+      soundId: selectedSoundDocumentId,
       active: true,
       days: activeDays,
+      userId: userId,
     };
-    if (isEditing) {
-      setAlarms(
-        alarms.map((alarm, index) =>
-          index === currentAlarm ? newAlarm : alarm
-        )
+
+    try {
+      if (isEditing) {
+        const alarmId = alarms[currentAlarm].$id;
+        await databases.updateDocument(
+          "66797b11000ca7e40dcc",
+          "66b93cdd001f6d14a27e",
+          alarmId,
+          newAlarm
+        );
+      } else {
+        await databases.createDocument(
+          "66797b11000ca7e40dcc",
+          "66b93cdd001f6d14a27e",
+          "unique()",
+          newAlarm
+        );
+      }
+
+      const response = await databases.listDocuments(
+        "66797b11000ca7e40dcc",
+        "66b93cdd001f6d14a27e",
+        [Query.equal("userId", userId)]
       );
-    } else {
-      setAlarms([...alarms, newAlarm]);
+      const updatedAlarms = response.documents;
+      setAlarms(updatedAlarms);
+
+      scheduleAlarm(newAlarm, updatedAlarms.length - 1);
+    } catch (error) {
+      console.error("Failed to save alarm:", error);
     }
-    await AsyncStorage.setItem("alarmSound", selectedSound);
-    scheduleAlarm(newAlarm);
+
     resetModal();
   };
 
-  const scheduleAlarm = async (alarm) => {
-    const now = new Date();
-    const trigger = new Date(alarm.time);
-    if (trigger > now) {
-      const delay = trigger.getTime() - now.getTime();
-      console.log("Scheduling alarm to trigger in:", delay, "milliseconds");
-      setTimeout(() => {
-        console.log("Triggering alarm immediately for testing");
-        registerBackgroundTask();
-      }, delay);
+  const deleteAlarm = async (index) => {
+    const userId = await getUserId();
+    if (!userId) return;
+
+    try {
+      const alarmId = alarms[index].$id;
+      await databases.deleteDocument(
+        "66797b11000ca7e40dcc",
+        "66b93cdd001f6d14a27e",
+        alarmId
+      );
+      setAlarms(alarms.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error("Failed to delete alarm:", error);
     }
   };
 
@@ -133,22 +184,19 @@ const Alarm = () => {
     setIsEditing(false);
     setCurrentAlarm(null);
     setTime(new Date());
-    setSelectedSound("emergency");
+    setSelectedSound("Emergency");
     setActiveDays([]);
+    setSelectedSoundDocumentId("66b94f5900329d9d770a"); // Reset to default value or null if needed
   };
 
   const editAlarm = (index) => {
     const alarm = alarms[index];
     setTime(new Date(alarm.time));
-    setSelectedSound(alarm.sound);
+    setSelectedSoundDocumentId(alarm.soundId); // Correctly set the selected sound ID when editing
     setActiveDays(alarm.days);
     setCurrentAlarm(index);
     setIsEditing(true);
     setModalVisible(true);
-  };
-
-  const deleteAlarm = (index) => {
-    setAlarms(alarms.filter((_, i) => i !== index));
   };
 
   const handleConfirm = (selectedDate) => {
@@ -185,6 +233,35 @@ const Alarm = () => {
           : alarm
       )
     );
+  };
+
+  const scheduleAlarm = async (alarm, index) => {
+    const currentTime = new Date().getTime();
+    const alarmTime = new Date(alarm.time).getTime();
+
+    if (alarmTime <= currentTime) {
+      console.log("Alarm time has already passed.");
+      return;
+    }
+
+    const timeDifference = alarmTime - currentTime;
+
+    setTimeout(async () => {
+      if (alarm.active) {
+        try {
+          const soundDocument = await databases.getDocument(
+            "66797b11000ca7e40dcc",
+            "66797ba40026e00acb05",
+            alarm.soundId
+          );
+
+          const soundName = soundDocument.name;
+          playSound(soundName, index);
+        } catch (error) {
+          console.error("Failed to fetch sound document:", error);
+        }
+      }
+    }, timeDifference);
   };
 
   const activeAlarmsCount = alarms.filter((alarm) => alarm.active).length;
@@ -366,11 +443,16 @@ const Alarm = () => {
                 onCancel={() => setShowTimePicker(false)}
               />
               <Picker
-                selectedValue={selectedSound}
+                selectedValue={selectedSoundDocumentId}
                 style={{ height: 50, width: 250 }}
-                onValueChange={(itemValue) => setSelectedSound(itemValue)}
+                onValueChange={(itemValue) => {
+                  console.log("Selected Sound Document ID:", itemValue); // Debugging log
+                  setSelectedSoundDocumentId(itemValue);
+                }}
               >
-                <Picker.Item label="Emergency" value="emergency" />
+                <Picker.Item label="Emergency" value="66b94f5900329d9d770a" />
+                {/* <Picker.Item label="Chime" value="soundDocumentId2" /> */}
+                {/* Add more Picker.Item elements with actual document IDs */}
               </Picker>
               <View
                 style={{
