@@ -8,11 +8,41 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "withoutCredentials": true
+      },
+      "ios": {
+        "simulator": true,
+        "enterpriseProvisioning": "universal"
+      }
     },
-    "production": {}
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "simulator": false,
+        "enterpriseProvisioning": "adhoc"
+      }
+    }
   },
   "submit": {
     "production": {}
+  },
+  "update": {
+    "production": {
+      "branch": "production",
+      "channel": "production"
+    },
+    "development": {
+      "branch": "development",
+      "channel": "development"
+    },
+    "preview": {
+      "branch": "preview",
+      "channel": "preview"
+    }
   }
 }

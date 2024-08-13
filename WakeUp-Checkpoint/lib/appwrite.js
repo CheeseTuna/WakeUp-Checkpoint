@@ -58,15 +58,15 @@ export const createUser = async (email, password, username) => {
 
 export const logIn = async (email, password) => {
     try {
-        // List active sessions
+       
         const sessions = await account.listSessions();
 
-        // Delete each active session
+        
         for (const session of sessions.sessions) {
             await account.deleteSession(session.$id);
         }
 
-        // Create a new session
+      
         const session = await account.createEmailPasswordSession(email, password);
         return session;
 

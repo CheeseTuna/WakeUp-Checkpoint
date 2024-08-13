@@ -1,4 +1,3 @@
-// app/index.jsx
 import React, { useEffect } from "react";
 import {
   SafeAreaView,

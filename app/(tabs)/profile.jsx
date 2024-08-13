@@ -322,7 +322,7 @@ const Profile = () => {
             <Text style={styles.statsTextRight}>0</Text>
           </View>
         </ScrollView>
-        {/* Edit Profile Slide-in starts ;)xs */}
+        {/* Edit Profile Slide-in starts ;) */}
         <Modal
           animationType="none"
           transparent={true}

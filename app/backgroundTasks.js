@@ -1,19 +1,17 @@
-// app/backgroundTasks.js
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Define the background task
 TaskManager.defineTask('ALARM_TASK', async () => {
   console.log('Background task ALARM_TASK executed');
   try {
     const soundFiles = {
       emergency: require('../assets/sounds/emergency.wav'),
-      // Add other sound files as necessary
+  
     };
 
-    // Retrieve the alarm sound from storage
+  
     const alarmSound = await AsyncStorage.getItem('alarmSound');
     console.log('Retrieved alarm sound from AsyncStorage:', alarmSound);
 
@@ -34,11 +32,11 @@ TaskManager.defineTask('ALARM_TASK', async () => {
   }
 });
 
-// Register the background task
+
 export const registerBackgroundTask = async () => {
   try {
     await BackgroundFetch.registerTaskAsync('ALARM_TASK', {
-      minimumInterval: 1, // 1 minute for testing
+      minimumInterval: 1, 
       stopOnTerminate: false,
       startOnBoot: true,
     });

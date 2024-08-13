@@ -1,25 +1,25 @@
-import { View, Text, ScrollView, Image, Alert } from 'react-native';
-import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, ScrollView, Image, Alert } from "react-native";
+import React, { useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import images from '../../constants/images'; // corrected path
-import FormField from '../../components/FormField'; // corrected import
-import CustomButton from '../../components/CustomButton'; // corrected import
-import { Link, router } from 'expo-router';
-import { createUser } from '../../lib/appwrite';
+import images from "../../constants/images";
+import FormField from "../../components/FormField";
+import CustomButton from "../../components/CustomButton";
+import { Link, router } from "expo-router";
+import { createUser } from "../../lib/appwrite";
 
 const Register = () => {
   const [form, setForm] = useState({
-    username: '',
-    email: '',
-    password: ''
+    username: "",
+    email: "",
+    password: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const submit = async () => {
     if (!form.username || !form.email || !form.password) {
-      Alert.alert('Error', 'Please fill in all the fields');
+      Alert.alert("Error", "Please fill in all the fields");
       return;
     }
 
@@ -27,10 +27,10 @@ const Register = () => {
 
     try {
       const result = await createUser(form.email, form.password, form.username);
-      // set it to global state..
-      router.replace('/profile');
+
+      router.replace("/profile");
     } catch (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert("Error", error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -40,9 +40,15 @@ const Register = () => {
     <SafeAreaView className="bg-primary h-full">
       <ScrollView>
         <View className="w-full justify-center min-h-[83vh] px-4 my-6">
-          <Image source={images.header} resizeMode='contain' className="w-[145px] h-[50px]" />
+          <Image
+            source={images.header}
+            resizeMode="contain"
+            className="w-[145px] h-[50px]"
+          />
 
-          <Text className="text-2xl text-white text-semibold mt-10 font-psemibold">Register Account</Text>
+          <Text className="text-2xl text-white text-semibold mt-10 font-psemibold">
+            Register Account
+          </Text>
 
           <FormField
             title="Username"
@@ -71,8 +77,15 @@ const Register = () => {
           />
 
           <View className="justify-center pt-5 flex-row gap-2">
-            <Text className="text-lg text-gray-100 font-pregular">Have an account already?</Text>
-            <Link href="log-in" className="text-lg font-psemibold text-secondary">Log In</Link>
+            <Text className="text-lg text-gray-100 font-pregular">
+              Have an account already?
+            </Text>
+            <Link
+              href="log-in"
+              className="text-lg font-psemibold text-secondary"
+            >
+              Log In
+            </Link>
           </View>
         </View>
       </ScrollView>

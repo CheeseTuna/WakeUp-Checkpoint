@@ -205,7 +205,6 @@ const Friends = () => {
     }
   };
 
-  // Debounced search function
   const debouncedSearchUsers = useRef(
     debounce((query) => searchUsers(query), 300)
   ).current;

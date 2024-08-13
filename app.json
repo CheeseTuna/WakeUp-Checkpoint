@@ -48,6 +48,11 @@
       "eas": {
         "projectId": "e02a1294-cab1-4ef0-b862-7f40cf79d3b1"
       }
-    }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/e02a1294-cab1-4ef0-b862-7f40cf79d3b1"
+    },
+    "owner": "cheesycheesecake"
   }
 }

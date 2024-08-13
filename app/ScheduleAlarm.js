@@ -1,4 +1,3 @@
-// app/ScheduleAlarm.js
 import React, { useState } from 'react';
 import { View, Button } from 'react-native';
 import * as Notifications from 'expo-notifications';
