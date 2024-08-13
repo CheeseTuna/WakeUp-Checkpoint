@@ -15,6 +15,8 @@ import { Audio } from "expo-av";
 import moment from "moment";
 import { databases, account } from "../services/appwrite";
 import { Query, ID } from "appwrite";
+import { Pedometer } from "expo-sensors";
+import { TextInput } from "react-native";
 
 const Alarm = () => {
   const [alarms, setAlarms] = useState([]);
@@ -35,8 +37,13 @@ const Alarm = () => {
   const [triggeredAlarm, setTriggeredAlarm] = useState(null);
   const [alarmTriggerModalVisible, setAlarmTriggerModalVisible] =
     useState(false);
+  const [stepCount, setStepCount] = useState(0);
+  const [stepGoal, setStepGoal] = useState(0);
 
+  // Days of the week array
   const daysOfWeek = ["M", "Tu", "W", "Th", "F", "S", "Su"];
+
+  // Toggle the active days of the alarm
   const toggleDay = (day, index) => {
     const updatedAlarms = alarms.map((alarm, i) => {
       if (i === index) {
@@ -78,6 +85,33 @@ const Alarm = () => {
     }
   };
 
+  // Effect to watch the step count using the Pedometer
+  useEffect(() => {
+    let subscribe;
+
+    const startStepCount = async () => {
+      const isAvailable = await Pedometer.isAvailableAsync();
+      console.log("Pedometer available:", isAvailable);
+
+      if (isAvailable) {
+        subscribe = Pedometer.watchStepCount((result) => {
+          console.log("Steps counted:", result.steps); // Check if steps are being counted
+          setStepCount(result.steps);
+        });
+      } else {
+        alert("Pedometer not available on this device.");
+      }
+    };
+
+    startStepCount();
+
+    return () => {
+      if (subscribe) {
+        subscribe.remove();
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const fetchAlarms = async () => {
       const userId = await getUserId();
@@ -98,28 +132,27 @@ const Alarm = () => {
     fetchAlarms();
   }, []);
 
-  const playSound = async (soundName, index, showModal = true) => {
+  const playSound = async (name, index, showModal = true) => {
     try {
-      if (
-        isPlaying &&
-        currentSound === soundName &&
-        playingAlarmIndex === index
-      ) {
+      if (isPlaying && currentSound === name && playingAlarmIndex === index) {
         await sound.stopAsync();
         setIsPlaying(false);
         setPlayingAlarmIndex(null);
-        setAlarmTriggerModalVisible(false); // Hide the modal when the sound stops
+        setAlarmTriggerModalVisible(false);
         return;
       }
 
       let soundFile;
-      switch (soundName) {
+      switch (name) {
         case "Emergency":
           soundFile = require("../../assets/sounds/emergency.wav");
           break;
+        case "chicken_toy":
+          soundFile = require("../../assets/sounds/chicken_toy.mp3");
+          break;
         // Add more cases as needed
         default:
-          console.error("Sound file not found for:", soundName);
+          console.error("Sound file not found for:", name);
           return;
       }
 
@@ -128,17 +161,17 @@ const Alarm = () => {
       }
 
       const { sound: newSound } = await Audio.Sound.createAsync(soundFile, {
-        isLooping: true, // Set the sound to loop
+        isLooping: true,
       });
       setSound(newSound);
-      setCurrentSound(soundName);
+      setCurrentSound(name);
       setIsPlaying(true);
       setPlayingAlarmIndex(index);
       await newSound.playAsync();
 
       if (showModal) {
         setTriggeredAlarm(index);
-        setAlarmTriggerModalVisible(true); // Show the alarm trigger modal only if showModal is true
+        setAlarmTriggerModalVisible(true);
       }
     } catch (error) {
       console.error("Error playing sound:", error);
@@ -149,88 +182,49 @@ const Alarm = () => {
     const userId = await getUserId();
     if (!userId) return;
 
+    // Ensure stepGoal is within the allowed range
+    const validStepCount = Math.min(Math.max(parseInt(stepGoal, 10), 0), 5000);
+
     try {
-      let newAlarm;
+      const alarmData = {
+        time: time.toISOString(),
+        soundId: selectedSoundDocumentId,
+        name: selectedSound, // Store the selected sound name correctly
+        active: true,
+        days: activeDays,
+        userId: userId,
+        stepCount: validStepCount,
+      };
+
+      console.log("Alarm data being saved:", alarmData);
 
       if (isEditing) {
         const alarmId = alarms[currentAlarm].$id;
-        console.log(`Editing alarm with ID: ${alarmId}`);
         await databases.updateDocument(
           "66797b11000ca7e40dcc",
           "66b93cdd001f6d14a27e",
           alarmId,
-          {
-            time: time.toISOString(),
-            soundId: selectedSoundDocumentId,
-            active: true,
-            days: activeDays,
-            userId: userId,
-          }
+          alarmData
         );
-        newAlarm = {
-          ...alarms[currentAlarm],
-          time: time.toISOString(),
-          soundId: selectedSoundDocumentId,
-          active: true,
-          days: activeDays,
-        };
-        console.log(`Alarm with ID: ${alarmId} has been saved.`);
+        setAlarms(
+          alarms.map((alarm, index) =>
+            index === currentAlarm ? { ...alarm, ...alarmData } : alarm
+          )
+        );
       } else {
         const response = await databases.createDocument(
           "66797b11000ca7e40dcc",
           "66b93cdd001f6d14a27e",
           ID.unique(),
-          {
-            time: time.toISOString(),
-            soundId: selectedSoundDocumentId,
-            active: true,
-            days: activeDays,
-            userId: userId,
-          }
+          alarmData
         );
-        newAlarm = response;
-        console.log(`Creating a new alarm with ID: ${newAlarm.$id}`);
+        setAlarms([...alarms, response]);
       }
-
-      const updatedAlarms = await databases.listDocuments(
-        "66797b11000ca7e40dcc",
-        "66b93cdd001f6d14a27e",
-        [Query.equal("userId", userId)]
-      );
-      setAlarms(updatedAlarms.documents);
-
-      scheduleAlarm(newAlarm, updatedAlarms.documents.length - 1);
     } catch (error) {
       console.error("Failed to save alarm:", error);
     }
 
     resetModal();
-  };
-
-  const deleteAlarm = async (index) => {
-    const userId = await getUserId();
-    if (!userId) return;
-
-    try {
-      const alarmId = alarms[index].$id;
-      console.log(`Deleting alarm with ID: ${alarmId}`);
-
-      if (alarmTimeouts[alarmId]) {
-        clearTimeout(alarmTimeouts[alarmId]); // Clear the timeout if the alarm is deleted
-        delete alarmTimeouts[alarmId];
-        console.log(`Cancelled scheduled alarm with ID: ${alarmId}`);
-      }
-
-      await databases.deleteDocument(
-        "66797b11000ca7e40dcc",
-        "66b93cdd001f6d14a27e",
-        alarmId
-      );
-
-      setAlarms(alarms.filter((_, i) => i !== index));
-    } catch (error) {
-      console.error("Failed to delete alarm:", error);
-    }
   };
 
   const resetModal = () => {
@@ -320,12 +314,20 @@ const Alarm = () => {
   };
 
   const stopAlarm = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      setIsPlaying(false);
-      setPlayingAlarmIndex(null);
-      setTriggeredAlarm(null);
-      setAlarmTriggerModalVisible(false); // Hide the alarm trigger modal when the alarm is stopped
+    if (stepCount >= stepGoal) {
+      if (sound) {
+        await sound.stopAsync();
+        setIsPlaying(false);
+        setPlayingAlarmIndex(null);
+        setTriggeredAlarm(null);
+        setAlarmTriggerModalVisible(false);
+        console.log("Alarm stopped after reaching step count.");
+      }
+    } else {
+      alert(
+        `Please complete ${stepGoal - stepCount} more steps to stop the alarm!`
+      );
+      console.log(`Step goal not reached: ${stepCount}/${stepGoal}`);
     }
   };
 
@@ -466,18 +468,12 @@ const Alarm = () => {
                 <Button
                   title={
                     isPlaying &&
-                    currentSound === selectedSound &&
+                    currentSound === item.name &&
                     playingAlarmIndex !== null
                       ? "Stop"
                       : "Play"
                   }
-                  onPress={() =>
-                    playSound(
-                      selectedSound,
-                      triggeredAlarm || playingAlarmIndex,
-                      false
-                    )
-                  }
+                  onPress={() => playSound(item.name, index, false)} // Pass the correct sound name
                 />
               </View>
             </TouchableOpacity>
@@ -499,6 +495,7 @@ const Alarm = () => {
         )}
         keyExtractor={(item, index) => index.toString()}
       />
+
       <TouchableOpacity
         style={{
           position: "absolute",
@@ -518,7 +515,7 @@ const Alarm = () => {
       </TouchableOpacity>
       <Modal
         animationType="slide"
-        transparent={false} // Fullscreen modal
+        transparent={false}
         visible={alarmTriggerModalVisible}
         onRequestClose={() => {
           setAlarmTriggerModalVisible(false);
@@ -535,10 +532,20 @@ const Alarm = () => {
           }}
         >
           <Image
-            source={require("../../assets/images/alarm.gif")} // Replace with your correct path to the GIF
-            style={{ width: 350, height: 350, marginBottom: 40 }} // Adjust size as needed
+            source={require("../../assets/images/alarm.gif")}
+            style={{ width: 350, height: 350, marginBottom: 40 }}
             resizeMode="contain"
           />
+
+          <Text style={{ color: "white", fontSize: 24, marginBottom: 20 }}>
+            Taken Steps: {stepCount > 0 ? stepCount : 0}{" "}
+            {/* Ensure stepCount is displayed */}
+          </Text>
+          <Text style={{ color: "white", fontSize: 24, marginBottom: 40 }}>
+            Target Steps: {stepGoal > 0 ? stepGoal : 0}{" "}
+            {/* Ensure stepGoal is displayed */}
+          </Text>
+
           <View
             style={{
               flexDirection: "row",
@@ -640,9 +647,19 @@ const Alarm = () => {
                 style={{ height: 50, width: 250 }}
                 onValueChange={(itemValue) => {
                   setSelectedSoundDocumentId(itemValue);
+                  switch (itemValue) {
+                    case "66b94f5900329d9d770a":
+                      setSelectedSound("Emergency");
+                      break;
+                    case "66baa3ff00095a263d79":
+                      setSelectedSound("chicken_toy");
+                      break;
+                  }
                 }}
               >
                 <Picker.Item label="Emergency" value="66b94f5900329d9d770a" />
+                <Picker.Item label="Chicken Toy" value="66baa3ff00095a263d79" />
+
                 {/* Add more Picker.Item elements with actual document IDs */}
               </Picker>
               <View
@@ -652,6 +669,20 @@ const Alarm = () => {
                   marginVertical: 10,
                 }}
               >
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "gray",
+                    padding: 10,
+                    borderRadius: 5,
+                    textAlign: "center",
+                    marginVertical: 10,
+                  }}
+                  placeholder="Enter Step Goal"
+                  keyboardType="numeric"
+                  value={stepGoal.toString()}
+                  onChangeText={(text) => setStepGoal(parseInt(text) || 0)}
+                />
                 <Button title="Cancel" onPress={resetModal} />
                 <Button
                   title={isEditing ? "Save" : "Add"}
