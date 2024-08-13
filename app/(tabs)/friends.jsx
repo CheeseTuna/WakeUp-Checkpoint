@@ -15,42 +15,48 @@ import {
 } from "react-native";
 import images from "../../constants/images";
 import addFriendIcon from "../../assets/icons/add_friend.png";
-import chatIcon from "../../assets/icons/chat.png";
 import addIcon from "../../assets/icons/add.png";
 import addedIcon from "../../assets/icons/added.png";
-import removeIcon from "../../assets/icons/remove.png"; // Import the remove icon
-import { Client, Account, Databases, Query, ID } from "appwrite"; // Import necessary Appwrite services
-import { debounce } from "lodash"; // Import debounce from lodash
+import removeIcon from "../../assets/icons/remove.png";
+import { Client, Account, Databases, Query, ID } from "appwrite";
+import { debounce } from "lodash";
+import * as DocumentPicker from "expo-document-picker";
 
-// Initialize Appwrite client
 const client = new Client();
 client
-  .setEndpoint("https://cloud.appwrite.io/v1") // Set your Appwrite endpoint
-  .setProject("667978f100298ba15c44"); // Set your project ID
+  .setEndpoint("https://cloud.appwrite.io/v1")
+  .setProject("667978f100298ba15c44");
 
 const account = new Account(client);
 const databases = new Databases(client);
 
 const Friends = () => {
+  const [selectedSound, setSelectedSound] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
-  const [addedUsers, setAddedUsers] = useState([]); // State to keep track of added users
-  const [sentRequests, setSentRequests] = useState([]); // State to keep track of sent requests
-  const [requestsModalVisible, setRequestsModalVisible] = useState(false); // State for requests modal
+  const [addedUsers, setAddedUsers] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [requestsModalVisible, setRequestsModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("suggestions");
   const slideAnim = useRef(
     new Animated.Value(Dimensions.get("window").width)
   ).current;
   const bottomSlideAnim = useRef(
     new Animated.Value(Dimensions.get("window").height)
-  ).current; // Animation for bottom slide
+  ).current;
   const alarmModalSlideAnim = useRef(
     new Animated.Value(Dimensions.get("window").height)
-  ).current; // Animation for the alarm modal
+  ).current;
+  const [alarmSounds, setAlarmSounds] = useState([
+    { name: "Chime", uri: null },
+    { name: "Emergency", uri: null },
+    { name: "Chicken Toy", uri: null },
+  ]);
+  const [notificationVisible, setNotificationVisible] = useState(false);
 
-  const [alarmModalVisible, setAlarmModalVisible] = useState(false); // State for alarm modal
+  const [alarmModalVisible, setAlarmModalVisible] = useState(false);
   const [friends, setFriends] = useState([
     {
       name: "Adam",
@@ -74,11 +80,37 @@ const Friends = () => {
       status: "Wake Up!",
     },
   ]);
+  const handleAddSound = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "audio/*",
+      });
+
+      if (result.type === "success") {
+        const { uri, name } = result;
+        const extension = name.split(".").pop().toLowerCase();
+
+        if (["wav", "mp3", "mp4"].includes(extension)) {
+          const newSound = { name, uri };
+          setAlarmSounds((prevSounds) => [...prevSounds, newSound]);
+          setSelectedSound(newSound);
+        } else {
+          alert(
+            "Please select a valid file with .wav, .mp3, or .mp4 extension."
+          );
+        }
+      } else {
+        console.log("User canceled the picker");
+      }
+    } catch (error) {
+      console.error("Error picking sound file:", error);
+    }
+  };
 
   const handleAddFriend = () => {
     setModalVisible(true);
-    setActiveTab("suggestions"); // Automatically select suggestions tab
-    fetchRandomUsers(); // Fetch random users for suggestions
+    setActiveTab("suggestions");
+    fetchRandomUsers();
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 500,
@@ -124,7 +156,6 @@ const Friends = () => {
 
   const handleAddUser = async (user) => {
     try {
-      // Create a friend request document with a pending status
       const request = await databases.createDocument(
         "66797b11000ca7e40dcc",
         "66acd4470023494c7bf4",
@@ -145,7 +176,6 @@ const Friends = () => {
 
   const handleRemoveUser = async (request) => {
     try {
-      // Delete the friend request document
       await databases.deleteDocument(
         "66797b11000ca7e40dcc",
         "66acd4470023494c7bf4",
@@ -513,18 +543,44 @@ const Friends = () => {
                 >
                   <View style={styles.alarmModalView}>
                     <Text style={styles.alarmTitle}>CHOOSE ALARM SOUND</Text>
-                    <TouchableOpacity style={styles.alarmOption}>
-                      <Text style={styles.alarmOptionText}>Chime</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.alarmOption}>
-                      <Text style={styles.alarmOptionText}>Emergency</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.alarmOption}>
-                      <Text style={styles.alarmOptionText}>Chicken Toy</Text>
-                    </TouchableOpacity>
+                    <ScrollView style={styles.alarmOptionsContainer}>
+                      {alarmSounds.map((sound, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={[
+                            styles.alarmOption,
+                            selectedSound &&
+                              selectedSound.name === sound.name &&
+                              styles.selectedSound,
+                          ]}
+                          onPress={() => setSelectedSound(sound)}
+                        >
+                          <Text style={styles.alarmOptionText}>
+                            {sound.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                      <TouchableOpacity
+                        style={styles.alarmOption}
+                        onPress={handleAddSound}
+                      >
+                        <Text style={styles.alarmOptionText}>+ Add Sound</Text>
+                      </TouchableOpacity>
+                    </ScrollView>
                     <TouchableOpacity
                       style={styles.wakeUpButton}
-                      onPress={closeAlarmModal}
+                      onPress={() => {
+                        console.log("Wake Up button pressed");
+                        setAlarmModalVisible(false);
+                        console.log("Modal should be closed");
+                        setNotificationVisible(true);
+                        console.log("Notification should be visible");
+
+                        setTimeout(() => {
+                          console.log("Hiding notification");
+                          setNotificationVisible(false);
+                        }, 3000);
+                      }}
                     >
                       <Text style={styles.wakeUpButtonText}>WAKE UP!</Text>
                     </TouchableOpacity>
@@ -534,6 +590,14 @@ const Friends = () => {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+        {notificationVisible && (
+          <View style={styles.notification}>
+            <Text style={styles.notificationText}>
+              {" "}
+              You have sent an alarm!{" "}
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -782,6 +846,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#181A20",
     padding: 20,
   },
+  alarmOptionsContainer: {
+    flex: 1,
+    marginBottom: 20,
+  },
   alarmModalView: {
     flex: 1,
     justifyContent: "space-between",
@@ -807,12 +875,42 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 10,
     backgroundColor: "red",
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
   wakeUpButtonText: {
     color: "white",
     fontSize: 20,
     textAlign: "center",
     fontWeight: "bold",
+  },
+  selectedSoundText: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  selectedSound: {
+    backgroundColor: "#555",
+  },
+  notification: {
+    position: "absolute",
+    top: 50,
+    alignSelf: "center",
+    height: 60,
+    width: 250,
+    backgroundColor: "#181A20",
+    borderColor: "white",
+    borderWidth: 1,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+
+  notificationText: {
+    color: "white",
+    fontSize: 16,
   },
 });
 

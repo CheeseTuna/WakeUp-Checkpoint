@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, Text, FlatList, StyleSheet } from "react-native";
 
 const Alerts = () => {
-  // Sample data for notifications
   const [notifications, setNotifications] = useState([
     {
       id: "1",
@@ -19,7 +18,6 @@ const Alerts = () => {
       title: "Wake-up Tracker",
       body: "Adam has successfully waken up",
     },
-    // Add more notifications as needed
   ]);
 
   return (
@@ -34,7 +32,7 @@ const Alerts = () => {
           </View>
         )}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer} // For padding inside the list
+        contentContainerStyle={styles.listContainer}
       />
     </View>
   );
@@ -45,7 +43,7 @@ export default Alerts;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#161622", // Same background color as Alarm.jsx
+    backgroundColor: "#161622",
     padding: 20,
     paddingTop: 40,
   },
@@ -56,10 +54,10 @@ const styles = StyleSheet.create({
     right: 0,
   },
   listContainer: {
-    paddingBottom: 20, // Add padding at the bottom to make scrolling smoother
+    paddingBottom: 20,
   },
   notification: {
-    backgroundColor: "#222", // Dark background for the notifications
+    backgroundColor: "#222",
     padding: 15,
     marginBottom: 10,
     borderRadius: 10,

@@ -40,21 +40,17 @@ const Alarm = () => {
   const [stepCount, setStepCount] = useState(0);
   const [stepGoal, setStepGoal] = useState(0);
 
-  // Days of the week array
   const daysOfWeek = ["M", "Tu", "W", "Th", "F", "S", "Su"];
 
-  // Toggle the active days of the alarm
   const toggleDay = (day, index) => {
     const updatedAlarms = alarms.map((alarm, i) => {
       if (i === index) {
         if (alarm.days.includes(day)) {
-          // If the day is already in the list, remove it
           return {
             ...alarm,
             days: alarm.days.filter((d) => d !== day),
           };
         } else {
-          // Otherwise, add the day to the list
           return {
             ...alarm,
             days: [...alarm.days, day],
@@ -85,7 +81,6 @@ const Alarm = () => {
     }
   };
 
-  // Effect to watch the step count using the Pedometer
   useEffect(() => {
     let subscribe;
 
@@ -95,7 +90,7 @@ const Alarm = () => {
 
       if (isAvailable) {
         subscribe = Pedometer.watchStepCount((result) => {
-          console.log("Steps counted:", result.steps); // Check if steps are being counted
+          console.log("Steps counted:", result.steps);
           setStepCount(result.steps);
         });
       } else {
@@ -150,7 +145,7 @@ const Alarm = () => {
         case "chicken_toy":
           soundFile = require("../../assets/sounds/chicken_toy.mp3");
           break;
-        // Add more cases as needed
+
         default:
           console.error("Sound file not found for:", name);
           return;
@@ -182,14 +177,14 @@ const Alarm = () => {
     const userId = await getUserId();
     if (!userId) return;
 
-    // Ensure stepGoal is within the allowed range
     const validStepCount = Math.min(Math.max(parseInt(stepGoal, 10), 0), 5000);
 
     try {
+      let newAlarm;
+
       const alarmData = {
         time: time.toISOString(),
         soundId: selectedSoundDocumentId,
-        name: selectedSound, // Store the selected sound name correctly
         active: true,
         days: activeDays,
         userId: userId,
@@ -206,11 +201,7 @@ const Alarm = () => {
           alarmId,
           alarmData
         );
-        setAlarms(
-          alarms.map((alarm, index) =>
-            index === currentAlarm ? { ...alarm, ...alarmData } : alarm
-          )
-        );
+        newAlarm = { ...alarms[currentAlarm], ...alarmData };
       } else {
         const response = await databases.createDocument(
           "66797b11000ca7e40dcc",
@@ -218,13 +209,54 @@ const Alarm = () => {
           ID.unique(),
           alarmData
         );
-        setAlarms([...alarms, response]);
+        newAlarm = response;
       }
+
+      const updatedAlarms = await databases.listDocuments(
+        "66797b11000ca7e40dcc",
+        "66b93cdd001f6d14a27e",
+        [Query.equal("userId", userId)]
+      );
+      setAlarms(updatedAlarms.documents);
+
+      scheduleAlarm(newAlarm, updatedAlarms.documents.length - 1);
+
+      const subscribe = Pedometer.watchStepCount((result) => {
+        setStepCount(result.steps);
+      });
+
+      return () => subscribe.remove();
     } catch (error) {
       console.error("Failed to save alarm:", error);
     }
 
     resetModal();
+  };
+
+  const deleteAlarm = async (index) => {
+    const userId = await getUserId();
+    if (!userId) return;
+
+    try {
+      const alarmId = alarms[index].$id;
+      console.log(`Deleting alarm with ID: ${alarmId}`);
+
+      if (alarmTimeouts[alarmId]) {
+        clearTimeout(alarmTimeouts[alarmId]);
+        delete alarmTimeouts[alarmId];
+        console.log(`Cancelled scheduled alarm with ID: ${alarmId}`);
+      }
+
+      await databases.deleteDocument(
+        "66797b11000ca7e40dcc",
+        "66b93cdd001f6d14a27e",
+        alarmId
+      );
+
+      setAlarms(alarms.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error("Failed to delete alarm:", error);
+    }
   };
 
   const resetModal = () => {
@@ -290,7 +322,7 @@ const Alarm = () => {
       );
 
       if (!updatedAlarm.active && alarmTimeouts[alarm.$id]) {
-        clearTimeout(alarmTimeouts[alarm.$id]); // Clear the timeout if the alarm is deactivated
+        clearTimeout(alarmTimeouts[alarm.$id]);
         delete alarmTimeouts[alarm.$id];
         console.log(`Cancelled scheduled alarm with ID: ${alarm.$id}`);
       }
@@ -347,9 +379,7 @@ const Alarm = () => {
       } seconds`
     );
 
-    // Store the timeout ID in the alarmTimeouts object
     alarmTimeouts[alarm.$id] = setTimeout(async () => {
-      // Additional check to confirm the alarm's active status before triggering
       const latestAlarms = await databases.listDocuments(
         "66797b11000ca7e40dcc",
         "66b93cdd001f6d14a27e",
@@ -468,12 +498,18 @@ const Alarm = () => {
                 <Button
                   title={
                     isPlaying &&
-                    currentSound === item.name &&
+                    currentSound === selectedSound &&
                     playingAlarmIndex !== null
                       ? "Stop"
                       : "Play"
                   }
-                  onPress={() => playSound(item.name, index, false)} // Pass the correct sound name
+                  onPress={() =>
+                    playSound(
+                      selectedSound,
+                      triggeredAlarm || playingAlarmIndex,
+                      false
+                    )
+                  }
                 />
               </View>
             </TouchableOpacity>
@@ -495,7 +531,6 @@ const Alarm = () => {
         )}
         keyExtractor={(item, index) => index.toString()}
       />
-
       <TouchableOpacity
         style={{
           position: "absolute",
@@ -539,11 +574,9 @@ const Alarm = () => {
 
           <Text style={{ color: "white", fontSize: 24, marginBottom: 20 }}>
             Taken Steps: {stepCount > 0 ? stepCount : 0}{" "}
-            {/* Ensure stepCount is displayed */}
           </Text>
           <Text style={{ color: "white", fontSize: 24, marginBottom: 40 }}>
             Target Steps: {stepGoal > 0 ? stepGoal : 0}{" "}
-            {/* Ensure stepGoal is displayed */}
           </Text>
 
           <View
@@ -555,14 +588,13 @@ const Alarm = () => {
           >
             <TouchableOpacity
               onPress={() => {
-                // Functionality to snooze the alarm for 5 minutes
                 stopAlarm();
-                const snoozeTime = new Date(new Date().getTime() + 5 * 60000); // 5 minutes from now
+                const snoozeTime = new Date(new Date().getTime() + 5 * 60000);
                 const snoozedAlarm = {
                   ...alarms[triggeredAlarm],
                   time: snoozeTime.toISOString(),
                 };
-                scheduleAlarm(snoozedAlarm, triggeredAlarm); // Reschedule the alarm
+                scheduleAlarm(snoozedAlarm, triggeredAlarm);
                 setAlarmTriggerModalVisible(false);
               }}
               style={{
@@ -659,8 +691,6 @@ const Alarm = () => {
               >
                 <Picker.Item label="Emergency" value="66b94f5900329d9d770a" />
                 <Picker.Item label="Chicken Toy" value="66baa3ff00095a263d79" />
-
-                {/* Add more Picker.Item elements with actual document IDs */}
               </Picker>
               <View
                 style={{
