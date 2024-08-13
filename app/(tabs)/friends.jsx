@@ -46,7 +46,11 @@ const Friends = () => {
   const bottomSlideAnim = useRef(
     new Animated.Value(Dimensions.get("window").height)
   ).current; // Animation for bottom slide
+  const alarmModalSlideAnim = useRef(
+    new Animated.Value(Dimensions.get("window").height)
+  ).current; // Animation for the alarm modal
 
+  const [alarmModalVisible, setAlarmModalVisible] = useState(false); // State for alarm modal
   const [friends, setFriends] = useState([
     {
       name: "Adam",
@@ -211,6 +215,25 @@ const Friends = () => {
     }).start(() => setRequestsModalVisible(false));
   };
 
+  const openAlarmModal = () => {
+    setAlarmModalVisible(true);
+    Animated.timing(alarmModalSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      easing: Easing.out(Easing.exp),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const closeAlarmModal = () => {
+    Animated.timing(alarmModalSlideAnim, {
+      toValue: Dimensions.get("window").height,
+      duration: 500,
+      easing: Easing.in(Easing.exp),
+      useNativeDriver: false,
+    }).start(() => setAlarmModalVisible(false));
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={{ paddingTop: 20 }}>
@@ -265,6 +288,9 @@ const Friends = () => {
                           : "red",
                     },
                   ]}
+                  onPress={() => {
+                    if (friend.status === "Wake Up!") openAlarmModal();
+                  }}
                 >
                   <Text style={styles.statusText}> {friend.status} </Text>
                 </TouchableOpacity>
@@ -463,6 +489,45 @@ const Friends = () => {
                         </TouchableOpacity>
                       </View>
                     ))}
+                  </View>
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={alarmModalVisible}
+          onRequestClose={closeAlarmModal}
+        >
+          <TouchableWithoutFeedback onPress={closeAlarmModal}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <Animated.View
+                  style={[
+                    styles.alarmModalContainer,
+                    { transform: [{ translateY: alarmModalSlideAnim }] },
+                  ]}
+                >
+                  <View style={styles.alarmModalView}>
+                    <Text style={styles.alarmTitle}>CHOOSE ALARM SOUND</Text>
+                    <TouchableOpacity style={styles.alarmOption}>
+                      <Text style={styles.alarmOptionText}>Chime</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.alarmOption}>
+                      <Text style={styles.alarmOptionText}>Emergency</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.alarmOption}>
+                      <Text style={styles.alarmOptionText}>Chicken Toy</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.wakeUpButton}
+                      onPress={closeAlarmModal}
+                    >
+                      <Text style={styles.wakeUpButtonText}>WAKE UP!</Text>
+                    </TouchableOpacity>
                   </View>
                 </Animated.View>
               </TouchableWithoutFeedback>
@@ -708,6 +773,46 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
+  },
+  alarmModalContainer: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    height: "75%",
+    backgroundColor: "#181A20",
+    padding: 20,
+  },
+  alarmModalView: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  alarmTitle: {
+    color: "white",
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  alarmOption: {
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: "#333",
+    marginBottom: 10,
+  },
+  alarmOptionText: {
+    color: "white",
+    fontSize: 18,
+    textAlign: "center",
+  },
+  wakeUpButton: {
+    paddingVertical: 15,
+    borderRadius: 10,
+    backgroundColor: "red",
+  },
+  wakeUpButtonText: {
+    color: "white",
+    fontSize: 20,
+    textAlign: "center",
+    fontWeight: "bold",
   },
 });
 
